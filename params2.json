@@ -1,5 +1,5 @@
 {
-    "frequency"        : 2.42e9,
+    "frequency"        : 2.43e9,
     "filename"         : "_antenna_data.csv",
     "notes"            : "Experiment",
     "mast_start_angle" : -180,
@@ -8,8 +8,8 @@
     "arm_start_angle"  : 0.0,
     "arm_end_angle"    : 0.0,
     "arm_steps"        : 1,
-    "tx_radio_id"      : "56a75f",
-    "rx_radio_id"      : "61555f",
+    "tx_radio_id"      : "584763",
+    "rx_radio_id"      : "614761",
     "tx_freq_offset"   : 0,
     "rx_freq_offset"   : -7e3,
     "data_port"        : 8888,

@@ -15,5 +15,6 @@
     "data_port"        : 8888,
     "usb_port"         : "/dev/ttyACM0",
     "baudrate"         : 115200,
-    "rx_samples"       : 40000
+    "rx_samples"       : 40000,
+    "stm32_use_scalars": true
 }

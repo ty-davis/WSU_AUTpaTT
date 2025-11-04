@@ -9,7 +9,7 @@
 # Performs the following project-specific functions:
 #   LoadParams = imports 'json' file with inputs
 #   InitMotor   
-#   OpenDatafile
+#   open_datafile
 #   rms
 #   do_single
 #   do_AMscan
@@ -33,6 +33,8 @@ import TxRadio
 from MotorController import MotorController
 import matplotlib.pyplot as plt
 import time
+
+from motor_connection import MotorConnection
 #------------------------------------------------------------------------------
 def LoadParams(filename=None):
     """ Load parameters file
@@ -84,7 +86,7 @@ def InitMotor(params):
     motor_controller.reset_orientation()
     return motor_controller
 #------------------------------------------------------------------------------
-def OpenDatafile(params):
+def open_datafile(params):
     filename= time.strftime("%d-%b-%Y_%H-%M-%S") + params["filename"]
     datafile_fp = open(filename, 'w')
     datafile_fp.write(params["notes"]+"\n")
@@ -124,7 +126,7 @@ def do_single(Tx=True):
 #------------------------------------------------------------------------------
 def do_AMscan(params):
     motor_controller = InitMotor(params)
-    datafile = OpenDatafile(params) 
+    datafile = open_datafile(params) 
     radio_tx_graph = TxRadio.RadioFlowGraph(
         params["tx_radio_id"], 
         params["frequency"], 
@@ -183,7 +185,7 @@ def do_AMscan(params):
 #------------------------------------------------------------------------------
 def do_AMmeas(params):
     motor_controller = InitMotor(params)
-    datafile = OpenDatafile(params) 
+    datafile = open_datafile(params) 
     radio_tx_graph = TxRadio.RadioFlowGraph(
         params["tx_radio_id"], 
         params["frequency"], 
@@ -257,7 +259,7 @@ def do_AMmeas(params):
 # non-coherent noise-subtraction method (1st algorithm)
 def do_NSmeas(params):
     motor_controller = InitMotor(params)
-    datafile = OpenDatafile(params) 
+    datafile = open_datafile(params) 
     radio_tx_graph = TxRadio.RadioFlowGraph(
         params["tx_radio_id"], 
         params["frequency"], 
@@ -339,6 +341,72 @@ def do_NSmeas(params):
     print("Mast and arm should now be in home position")
     datafile.close()
     return antenna_data
+#------------------------------------------------------------------------------
+# Do AM Scan with STM32
+#------------------------------------------------------------------------------
+def do_AMscan_STM32(params):
+    datafile = open_datafile(params)
+    motor_conn = MotorConnection(
+        port=params["usb_port"],
+        baudrate=params["baudrate"],
+        use_scalars=params["stm32_use_scalars"]
+    )
+    radio_tx_graph = TxRadio.RadioFlowGraph(
+        params["tx_radio_id"],
+        params["frequency"],
+        params["tx_freq_offset"])
+    radio_rx_graph = RxRadio.RadioFlowGraph(
+        params["rx_radio_id"], 
+        params["frequency"], 
+        params["rx_freq_offset"])
+    AMantenna_data   = []
+    radio_tx_graph.start()
+    time.sleep(3)
+    print("Moving to start angle")
+    motor_conn.send_command('MOVE_AZM_BY', 180)
+    motor_conn.wait(10)
+    print("Collecting data while moving to end angle")
+    radio_rx_graph.start()
+    motor_conn.send_command('MOVE_AZM_BY', -360)
+    motor_conn.wait(10)
+    radio_rx_graph.stop()
+    radio_tx_graph.stop()
+    print("Finished collection, return to 0")
+    motor_conn.send_command('MOVE_AZM_BY', 180)
+    antenna_data = radio_rx_graph.vector_sink_0.data()
+    n=len(antenna_data)
+    print("read {:d} data_points".format(n))
+    antenna_pow = np.square(antenna_data)
+    numangles = params["mast_end_angle"]-params["mast_start_angle"] 
+    binsize=int(n/numangles)
+    print("binsize= {:d}".format(binsize))
+    avg=np.zeros(numangles)
+    for i in range(numangles):
+        avg[i]=np.sqrt(np.square(
+            antenna_data[i*binsize:(i+1)*binsize]).sum()/binsize)
+    angles = range(int(params["mast_start_angle"]), int(params["mast_end_angle"]),1)
+    arm_angle = np.zeros(len(avg));
+    background_rssi = np.zeros(len(avg));
+    plt.plot(antenna_pow)
+    plt.show()
+    plt.plot(avg)
+    plt.show()
+    print("avg {:d}".format(len(avg)),binsize)
+    for i in range(len(avg)):
+        datafile.write(
+                str(angles[i]) + ',' + 
+                str(arm_angle[i]) + ',' + 
+                str(background_rssi[i]) + ',' + 
+                str(avg[i]) + '\n'
+                )
+        AMantenna_data.append((angles[i], arm_angle[i], 
+            background_rssi[i], avg[i]))
+
+    datafile.close();
+    print("datafile closed")
+
+    return AMantenna_data
+    
 #------------------------------------------------------------------------------
 # plot functions for menu
 #------------------------------------------------------------------------------
