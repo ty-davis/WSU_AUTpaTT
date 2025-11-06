@@ -9,7 +9,7 @@ from PlotGraph import PlotGraph
 import math
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from mayavi import mlab
+# from mayavi import mlab
 from mpl_toolkits import mplot3d
 from matplotlib.tri import Triangulation
 from matplotlib.ticker import LinearLocator

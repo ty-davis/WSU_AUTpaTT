@@ -1,5 +1,6 @@
 from .commands import MotorConnection
 from .codes import *
+from argparse import ArgumentParser
 
 def print_help():
     print("Available commands:")
@@ -17,7 +18,11 @@ CUSTOM_COMMANDS = {
 }
 
 def main():
-    motor = MotorConnection(debug=True)
+    parser = ArgumentParser(description="Motor connection interface")
+    parser.add_argument('--usb-port', type=str, help='USB port for motor connection', default="/dev/ttyACM0")
+    args = parser.parse_args()
+
+    motor = MotorConnection(port=args.usb_port, debug=True)
     motor.connect()
 
     print("Enter commands below ('exit' to exit)")
@@ -25,6 +30,7 @@ def main():
         try:
             user_in = input(">> ")
             if user_in == 'exit':
+                motor.disconnect()
                 print("Exiting...")
                 break
             elif user_in in CUSTOM_COMMANDS.keys():

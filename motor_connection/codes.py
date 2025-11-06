@@ -13,7 +13,7 @@ STATUS_CODES = {
     "MOVE_AZM_BY":  {
         "code": 0x11,
         "alias": 'ma',
-        "params": ['int16_t'],
+        "params": ['int32_t'],
         "scalar": [100],
         "response_params": None,
         "response_scalar": None,
@@ -22,7 +22,7 @@ STATUS_CODES = {
     "MOVE_AZM_TO":  {
         "code": 0x12,
         "alias": 'mat',
-        "params": ['int16_t'],
+        "params": ['int32_t'],
         "scalar": [100],
         "response_params": None,
         "response_scalar": None,
@@ -31,7 +31,7 @@ STATUS_CODES = {
     "MOVE_ELV_BY":  {
         "code": 0x13,
         "alias": 'me',
-        "params": ['int16_t'],
+        "params": ['int32_t'],
         "scalar": [100],
         "response_params": None,
         "response_scalar": None,
@@ -40,7 +40,7 @@ STATUS_CODES = {
     "MOVE_ELV_TO":  {
         "code": 0x14,
         "alias": 'met',
-        "params": ['int16_t'],
+        "params": ['int32_t'],
         "scalar": [100],
         "response_params": None,
         "response_scalar": None,
@@ -49,7 +49,7 @@ STATUS_CODES = {
     "MOVE_TO":  {
         "code": 0x15,
         "alias": 'mt',
-        "params": ['int16_t', 'int16_t'],
+        "params": ['int32_t', 'int32_t'],
         "scalar": [100, 100],
         "response_params": None,
         "response_scalar": None,

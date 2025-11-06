@@ -349,7 +349,8 @@ def do_AMscan_STM32(params):
     motor_conn = MotorConnection(
         port=params["usb_port"],
         baudrate=params["baudrate"],
-        use_scalars=params["stm32_use_scalars"]
+        use_scalars=params["stm32_use_scalars"],
+        debug=True
     )
     radio_tx_graph = TxRadio.RadioFlowGraph(
         params["tx_radio_id"],
@@ -361,6 +362,7 @@ def do_AMscan_STM32(params):
         params["rx_freq_offset"])
     AMantenna_data   = []
     radio_tx_graph.start()
+    motor_conn.connect()
     time.sleep(3)
     print("Moving to start angle")
     motor_conn.send_command('MOVE_AZM_BY', 180)
@@ -373,6 +375,8 @@ def do_AMscan_STM32(params):
     radio_tx_graph.stop()
     print("Finished collection, return to 0")
     motor_conn.send_command('MOVE_AZM_BY', 180)
+    motor_conn.wait(10)
+    motor_conn.disconnect()
     antenna_data = radio_rx_graph.vector_sink_0.data()
     n=len(antenna_data)
     print("read {:d} data_points".format(n))
@@ -406,6 +410,90 @@ def do_AMscan_STM32(params):
     print("datafile closed")
 
     return AMantenna_data
+
+def do_3Dscan_STM32(params):
+    motor_conn = MotorConnection(
+        port=params['usb_port'],
+        baudrate=params['baudrate'],
+        use_scalars=params['stm32_use_scalars'],
+        debug=True
+    )
+    radio_tx_graph = TxRadio.RadioFlowGraph(
+        params["tx_radio_id"],
+        params["frequency"],
+        params["tx_freq_offset"])
+    radio_rx_graph = RxRadio.RadioFlowGraph(
+        params["rx_radio_id"], 
+        params["frequency"], 
+        params["rx_freq_offset"])
+    radio_tx_graph.start()
+    motor_conn.connect()
+    time.sleep(3)
+
+    print("Moving to start angle")
+    start_elv_angle = -90
+    end_elv_angle = 90
+    elv_step = params['elevation_step']
+
+    motor_conn.send_command("MOVE_AZM_BY", 180)
+    motor_conn.wait(10)
+    motor_conn.send_command("MOVE_ELV_BY", start_elv_angle)
+    motor_conn.wait(10)
+    AMantenna_data = []
+    
+    for elv, i in enumerate(np.arange(start_elv_angle, end_elv_angle + elv_step, elv_step)):
+        datafile = open_datafile(params)
+        if i != 0:
+            motor_conn.send_command("MOVE_ELV_BY", elv_step)
+            motor_conn.wait(10)
+        print("ELEVATION:", elv)
+        print("Collecting data while moving to end angle")
+        radio_rx_graph.start()
+        motor_conn.send_command("MOVE_AZM_BY", -360 * -1 if i % 2 == 0 else 1)
+        motor_conn.wait(10)
+        radio_rx_graph.stop()
+        print("Finished collecting")
+
+        antenna_data = radio_rx_graph.vector_sink_0.data()
+        n = len(antenna_data)
+        print(f"read {n} data points")
+        antenna_pow = np.square(antenna_data)
+        numangles = params['mast_end_angle'] - params['mast_start_angle']
+        binsize = int(n/numangles)
+        print(f"binsize= {binsize}")
+        avg = np.zeros(numangles)
+        for i in range(numangles):
+            avg[i]=np.sqrt(np.square(
+                antenna_data[i*binsize:(i+1)*binsize]).sum()/binsize)
+        angles = range(int(params["mast_start_angle"]), int(params["mast_end_angle"]),1)
+        arm_angle = elv
+        background_rssi = np.zeros(len(avg));
+        print("avg {:d}".format(len(avg)),binsize)
+        for i in range(len(avg)):
+            datafile.write(
+                    str(angles[i]) + ',' + 
+                    str(arm_angle) + ',' + 
+                    str(background_rssi[i]) + ',' + 
+                    str(avg[i]) + '\n'
+                    )
+            AMantenna_data.append((angles[i], elv, 
+                background_rssi[i], avg[i]))
+
+        datafile.close();
+        print("datafile closed")
+        if hasattr(radio_rx_graph, 'blocks_head_0'):
+            radio_rx_graph.blocks_head_0.reset()
+    radio_tx_graph.stop()
+    print("Moving back to start")
+    motor_conn.send_command("MOVE_AZM_BY", 180)
+    motor_conn.wait(10)
+    motor_conn.send_command("MOVE_ELV_BY", -end_elv_angle)
+    motor_conn.wait(10)
+    motor_conn.disconnect();
+    print("FINISHED")
+
+    return AMantenna_data
+
     
 #------------------------------------------------------------------------------
 # plot functions for menu

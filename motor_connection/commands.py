@@ -68,7 +68,7 @@ class MotorConnection:
         response = self.parse_response(data, com[0])
         return response
 
-    def build_command(self, command, params):
+    def build_command(self, command: str, params):
         # parse the alias if necessary
         command = STATUS_ALIASES[command] if command in STATUS_ALIASES.keys() else command
         if command not in STATUS_CODES.keys():
@@ -196,7 +196,9 @@ class MotorConnection:
 
 
 def main(argv):
-    ...
+    x = MotorConnection()
+    if x.wait() == 'hello':
+        ...
 
 if __name__ == '__main__':
     main(sys.argv)

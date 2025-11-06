@@ -37,6 +37,7 @@ def main():
     menu_choices.append("Capture single background")                       # 8
     menu_choices.append("Quit")                                            # 9
     menu_choices.append("FastScan AUT w/ coherent AM method and STM32")    # 10
+    menu_choices.append("3D FastScan AUT w/ coeherent AM method repeated and STM32") # 11
     #
     while not quit:
         try:
@@ -79,6 +80,10 @@ def main():
                 print("AM SCAN with STM32")
                 params = RadioFunctions.LoadParams(param_filename)
                 RadioFunctions.do_AMscan_STM32(params)
+            elif selection == 11:
+                print("3D SCAN with STM32")
+                params = RadioFunctions.LoadParams(param_filename)
+                RadioFunctions.do_3Dscan_STM32(params)
         except Exception as e:                                
             print("Operation failed")                         
             print(e)                                          
