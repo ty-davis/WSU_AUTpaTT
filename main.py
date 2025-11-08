@@ -25,7 +25,7 @@ def main():
     #--------------------------------------------------------------------------
     # user should preload measurement parameters in "params.json" file
     #--------------------------------------------------------------------------
-    param_filename="params2.json"
+    param_filename="params.json"
     menu_choices = []
     menu_choices.append("FastScan AUT w/ coherent AM method")              # 1
     menu_choices.append("Measure  AUT w/ coherent AM method")              # 2
@@ -38,6 +38,7 @@ def main():
     menu_choices.append("Quit")                                            # 9
     menu_choices.append("FastScan AUT w/ coherent AM method and STM32")    # 10
     menu_choices.append("3D FastScan AUT w/ coeherent AM method repeated and STM32") # 11
+    menu_choices.append("Connect to STM32 Motor")                          # 12
     #
     while not quit:
         try:
@@ -84,6 +85,9 @@ def main():
                 print("3D SCAN with STM32")
                 params = RadioFunctions.LoadParams(param_filename)
                 RadioFunctions.do_3Dscan_STM32(params)
+            elif selection == 12:
+                params = RadioFunctions.LoadParams(param_filename)
+                RadioFunctions.stm32_connect(params)
         except Exception as e:                                
             print("Operation failed")                         
             print(e)                                          

@@ -33,6 +33,7 @@ import TxRadio
 from MotorController import MotorController
 import matplotlib.pyplot as plt
 import time
+import os
 
 from motor_connection import MotorConnection
 #------------------------------------------------------------------------------
@@ -65,6 +66,9 @@ def LoadParams(filename=None):
             defaults[p]=params[p]
         else:
             print("Parameter {:s} not specified in {:s} using default of ".format(p,filename),defaults[p])
+    for p in params:
+        if p not in defaults:
+            defaults[p] = params[p]
     #--------------------------------------------------------------------------        
     # make sure freqency is within hackrf range
     #--------------------------------------------------------------------------
@@ -87,8 +91,11 @@ def InitMotor(params):
     return motor_controller
 #------------------------------------------------------------------------------
 def open_datafile(params):
-    filename= time.strftime("%d-%b-%Y_%H-%M-%S") + params["filename"]
-    datafile_fp = open(filename, 'w')
+    filename = time.strftime("%d-%b-%Y_%H-%M-%S") + params["filename"]
+    output_file = os.path.join(params['output_folder'], filename)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+    datafile_fp = open(output_file, 'w')
     datafile_fp.write(params["notes"]+"\n")
     datafile_fp.write("% Mast Angle, Arm Angle, Background RSSI, Transmission RSSI\n")
     return datafile_fp
@@ -350,7 +357,7 @@ def do_AMscan_STM32(params):
         port=params["usb_port"],
         baudrate=params["baudrate"],
         use_scalars=params["stm32_use_scalars"],
-        debug=True
+        debug=params["debug_stm32"],
     )
     radio_tx_graph = TxRadio.RadioFlowGraph(
         params["tx_radio_id"],
@@ -376,6 +383,7 @@ def do_AMscan_STM32(params):
     print("Finished collection, return to 0")
     motor_conn.send_command('MOVE_AZM_BY', 180)
     motor_conn.wait(10)
+    time.sleep(1)
     motor_conn.disconnect()
     antenna_data = radio_rx_graph.vector_sink_0.data()
     n=len(antenna_data)
@@ -416,7 +424,7 @@ def do_3Dscan_STM32(params):
         port=params['usb_port'],
         baudrate=params['baudrate'],
         use_scalars=params['stm32_use_scalars'],
-        debug=True
+        debug=params["debug_stm32"],
     )
     radio_tx_graph = TxRadio.RadioFlowGraph(
         params["tx_radio_id"],
@@ -431,25 +439,28 @@ def do_3Dscan_STM32(params):
     time.sleep(3)
 
     print("Moving to start angle")
-    start_elv_angle = -90
-    end_elv_angle = 90
-    elv_step = params['elevation_step']
+    start_elv_angle = params["arm_start_angle"]
+    end_elv_angle = params["arm_end_angle"]
+    elv_steps = params["arm_steps"]
+    elv_angles = np.linspace(start_elv_angle, end_elv_angle, elv_steps)
+    elv_step = elv_angles[1] - elv_angles[0] if len(elv_angles > 1) else 0
 
     motor_conn.send_command("MOVE_AZM_BY", 180)
     motor_conn.wait(10)
     motor_conn.send_command("MOVE_ELV_BY", start_elv_angle)
     motor_conn.wait(10)
+    datafile = open_datafile(params)
     AMantenna_data = []
-    
-    for elv, i in enumerate(np.arange(start_elv_angle, end_elv_angle + elv_step, elv_step)):
-        datafile = open_datafile(params)
+
+    for i, elv in enumerate(elv_angles):
+        print(f"STARTING FOR ELEVATION: {elv} and I: {i}")
         if i != 0:
             motor_conn.send_command("MOVE_ELV_BY", elv_step)
             motor_conn.wait(10)
         print("ELEVATION:", elv)
         print("Collecting data while moving to end angle")
         radio_rx_graph.start()
-        motor_conn.send_command("MOVE_AZM_BY", -360 * -1 if i % 2 == 0 else 1)
+        motor_conn.send_command("MOVE_AZM_BY", -360 * (1 if i % 2 == 0 else -1))
         motor_conn.wait(10)
         radio_rx_graph.stop()
         print("Finished collecting")
@@ -462,28 +473,33 @@ def do_3Dscan_STM32(params):
         binsize = int(n/numangles)
         print(f"binsize= {binsize}")
         avg = np.zeros(numangles)
-        for i in range(numangles):
-            avg[i]=np.sqrt(np.square(
-                antenna_data[i*binsize:(i+1)*binsize]).sum()/binsize)
-        angles = range(int(params["mast_start_angle"]), int(params["mast_end_angle"]),1)
+        for j in range(numangles):
+            avg[j]=np.sqrt(np.square(
+                antenna_data[j*binsize:(j+1)*binsize]).sum()/binsize)
+        if i % 2 == 0:
+            angles = range(int(params["mast_start_angle"]), int(params["mast_end_angle"]), 1)
+        else:
+            angles = list(reversed(angles))
         arm_angle = elv
         background_rssi = np.zeros(len(avg));
         print("avg {:d}".format(len(avg)),binsize)
-        for i in range(len(avg)):
+        for j in range(len(avg)):
             datafile.write(
-                    str(angles[i]) + ',' + 
+                    str(angles[j]) + ',' + 
                     str(arm_angle) + ',' + 
-                    str(background_rssi[i]) + ',' + 
-                    str(avg[i]) + '\n'
+                    str(background_rssi[j]) + ',' + 
+                    str(avg[j]) + '\n'
                     )
-            AMantenna_data.append((angles[i], elv, 
-                background_rssi[i], avg[i]))
+            AMantenna_data.append((angles[j], elv, 
+                background_rssi[j], avg[j]))
 
-        datafile.close();
-        print("datafile closed")
-        if hasattr(radio_rx_graph, 'blocks_head_0'):
-            radio_rx_graph.blocks_head_0.reset()
+        print(dir(radio_rx_graph))
+        if hasattr(radio_rx_graph, 'vector_sink_0'):
+            print("CLEARING RADIO RX GRAPH")
+            radio_rx_graph.vector_sink_0.reset()
     radio_tx_graph.stop()
+    datafile.close();
+    print("datafile closed")
     print("Moving back to start")
     motor_conn.send_command("MOVE_AZM_BY", 180)
     motor_conn.wait(10)
@@ -493,6 +509,16 @@ def do_3Dscan_STM32(params):
     print("FINISHED")
 
     return AMantenna_data
+
+def stm32_connect(params):
+    motor_conn = MotorConnection(
+        port=params['usb_port'],
+        baudrate=params['baudrate'],
+        use_scalars=params['stm32_use_scalars'],
+        debug=params["debug_stm32"],
+    )
+    motor_conn.open_prompt()
+
 
     
 #------------------------------------------------------------------------------

@@ -7,6 +7,7 @@ Created on Sun Nov  6 16:16:21 2022
 
 from PlotGraph import PlotGraph
 import math
+import sys
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 # from mayavi import mlab
@@ -82,8 +83,10 @@ def get_plot_data(text):
 #                 cmap='viridis', edgecolor='none');
 
 
-
-fileName = input("Enter the name of the data you want to plot\n")
+if len(sys.argv) > 1:
+    fileName = sys.argv[1]
+else:
+    fileName = input("Enter the name of the data you want to plot\n")
 fr = open(fileName)
 text = fr.readlines()
 fr.close()
@@ -127,9 +130,9 @@ print(rnorm)
 for i in range(len(r)):
     r[i]=r[i]/rnorm
 
-r = r[::40]
-theta = theta[::40]
-phi = phi[::40]
+r = r[::3]
+theta = theta[::3]
+phi = phi[::3]
 
 
 # print(r)

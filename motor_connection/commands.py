@@ -193,12 +193,57 @@ class MotorConnection:
         if self.print_debug:
             print(*content)
 
+    def open_prompt(self):
+        """
+        Open a prompt to send commands straight to the STM32 Motor Connection
+
+        If a serial connection has not yet been made, it will be made.
+        """
+        if not self.serial_connection:
+            self.connect()
+
+        def print_help():
+            print("Available commands:")
+            for command, com_info in STATUS_CODES.items():
+                print(f" {command}  (or {com_info['alias']})")
+                print(f"   accepts {len(com_info['params'])} parameter{'s' if len(com_info['params']) > 1 else ''}\n")
+
+            print("Additional commands:")
+            for command in CUSTOM_COMMANDS.keys():
+                print("  " + command)
+
+        def toggle_scalars():
+            self.use_scalars = not self.use_scalars
+
+        CUSTOM_COMMANDS = {
+            'help': print_help,
+            'toggle_scalars': toggle_scalars,
+        }
+
+        print("Enter commands below ('exit' to exit)")
+        while True:
+            try:
+                user_in = input(">> ")
+                if user_in == 'exit':
+                    self.disconnect()
+                    print("Exiting...")
+                    break
+                elif user_in in CUSTOM_COMMANDS.keys():
+                    CUSTOM_COMMANDS[user_in]()
+                    continue
+
+
+                args = user_in.split()
+                response = self.send_command(args[0], *args[1:])
+                print(response)
+            except Exception as e:
+                print(e)
+                traceback.print_exc()
+
 
 
 def main(argv):
     x = MotorConnection()
-    if x.wait() == 'hello':
-        ...
 
 if __name__ == '__main__':
     main(sys.argv)
