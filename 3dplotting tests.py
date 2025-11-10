@@ -208,7 +208,8 @@ for i in range(len(test4)):
 
 
 tri = Triangulation(np.ravel(phi), np.ravel(theta))
-fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
+fig, ax = plt.subplots(subplot_kw={'projection': '3d'}, figsize=(11.42, 8.57))
+plt.tight_layout(pad=0)
 ax.plot([0,1],[0,0],[0,0], label = 'x', color = 'b')
 ax.plot([0,0],[0,1],[0,0], label = 'y', color = 'g')
 ax.plot([0,0],[0,0],[0,1], label = 'z', color = 'r' )
@@ -217,13 +218,19 @@ ax.plot_trisurf(x, y, z, triangles = tri.triangles,
                     cmap=plt.cm.CMRmap, linewidths = 0.5, antialiased=True);
 # ax.scatter(x, y, z, c=test4, alpha=1);
 # ax.plot([0,0[0]], [0,0[1]], [0,0[2]], label='x', color = 'r')
-ax.grid(False)    
+# ax.grid(False)    
 ax.legend()
 ax.set_xticks([])
 ax.set_yticks([])
 ax.set_zticks([])
-plt.axis('off')
-plt.show()
+ax.set_axis_off()
+ax.set_xlim([-0.6, 0.6])
+ax.set_ylim([-0.6, 0.6])
+ax.set_zlim([-0.6, 0.6])
+ax.set_box_aspect([1, 1, 1])
+ax.view_init(45, 150)
+plt.savefig('img_output.png', dpi=400, bbox_inches=None)
+# plt.show()
 
 
 
@@ -262,7 +269,6 @@ plt.show()
 # ax.plot_trisurf(x, y, z,
 #                 cmap='viridis', edgecolor='none');
 
-ax.view_init(45, 45)
 
 
 
