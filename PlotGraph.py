@@ -23,6 +23,8 @@ class PlotGraph():
         self.mast_angles = []
         self.arm_angles = []
         self.rssi = []
+        self.data = [list(x) for x in data]
+        self.elv_angles = sorted(list(set([d[1] for d in self.data])))
         for entry in data:
             mast_angle,arm_angle,background_rssi,transmit_rssi = entry
             self.mast_angles.append(float(mast_angle))
@@ -31,6 +33,12 @@ class PlotGraph():
         self.rssi = array(self.rssi);
         
         self.rssi = self.rssi/max(self.rssi);
+
+        # normalize the self.data
+        rssi_vals = [d[3] for d in self.data]
+        max_rssi_vals = max(rssi_vals)
+        for i in range(len(self.data)):
+            self.data[i][3] = self.data[i][3] / max_rssi_vals
         
         self.plot_in_db = input('plot pattern data in dB? (y/n): ');
         self.plot_in_db = self.plot_in_db.lower();
@@ -39,6 +47,38 @@ class PlotGraph():
             for i in range(len(self.rssi)):
                 if self.rssi[i] < -20 :
                     self.rssi[i] = -20;
+
+
+            for i in range(len(self.data)):
+                self.data[i][3] = 20 * log10(self.data[i][3])
+                self.data[i][3] = -20 if self.data[i][3] < -20 else self.data[i][3]
+
+    def show_each_elv(self):
+        print(self.elv_angles)
+        for elv in self.elv_angles:
+            small_data = [d for d in self.data if d[1] == elv]
+            ax = plt.subplot(111)
+            x = [d[0] for d in small_data]
+            y = [10**(d[3]/20) for d in small_data]
+            ax.plot(x, y)
+            plt.show()
+            ax = plt.subplot(111, projection='polar')
+            mast_angles = []
+            arm_angles = []
+            rssi = []
+            for entry in small_data:
+                mast_angles.append(entry[0])
+                arm_angles.append(entry[1])
+                rssi.append(entry[3] - entry[2])
+            print(mast_angles, arm_angles, rssi, sep="\n\n")
+            theta = [math.radians(angle) for angle in mast_angles]
+            ax.plot(theta, rssi)
+            if self.plot_in_db == 'y':
+                ax.set_rticks([-20, -15, -10, -5, 0])
+            ax.set_title(f"{self.title} - {elv}", va="bottom")
+            ax.set_theta_zero_location("N")
+            plt.show()
+
 #                                                        # plot the data
     def show(self):
         ax = plt.subplot(111, projection='polar')

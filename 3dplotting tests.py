@@ -8,9 +8,6 @@ Created on Sun Nov  6 16:16:21 2022
 from PlotGraph import PlotGraph
 import math
 import sys
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-# from mayavi import mlab
 from mpl_toolkits import mplot3d
 from matplotlib.tri import Triangulation
 from matplotlib.ticker import LinearLocator
@@ -96,6 +93,7 @@ fileData = get_plot_data(text);
 
 
 plot_graph = PlotGraph(fileData, fileName)
+plot_graph.show_each_elv()
 plot_graph.show()
 
 # print(fileData)
@@ -218,7 +216,7 @@ ax.plot_trisurf(x, y, z, triangles = tri.triangles,
                     cmap=plt.cm.CMRmap, linewidths = 0.5, antialiased=True);
 # ax.scatter(x, y, z, c=test4, alpha=1);
 # ax.plot([0,0[0]], [0,0[1]], [0,0[2]], label='x', color = 'r')
-# ax.grid(False)    
+ax.grid(True)    
 ax.legend()
 ax.set_xticks([])
 ax.set_yticks([])
@@ -229,8 +227,8 @@ ax.set_ylim([-0.6, 0.6])
 ax.set_zlim([-0.6, 0.6])
 ax.set_box_aspect([1, 1, 1])
 ax.view_init(45, 150)
-plt.savefig('img_output.png', dpi=400, bbox_inches=None)
-# plt.show()
+# plt.savefig('img_output.png', dpi=400, bbox_inches=None)
+plt.show()
 
 
 
