@@ -31,7 +31,7 @@ class PlotGraph():
             self.arm_angles.append(float(arm_angle))
             self.rssi.append(float(transmit_rssi)-float(background_rssi))
         self.rssi = array(self.rssi);
-        
+
         self.rssi = self.rssi/max(self.rssi);
 
         # normalize the self.data
@@ -39,19 +39,52 @@ class PlotGraph():
         max_rssi_vals = max(rssi_vals)
         for i in range(len(self.data)):
             self.data[i][3] = self.data[i][3] / max_rssi_vals
-        
-        self.plot_in_db = input('plot pattern data in dB? (y/n): ');
-        self.plot_in_db = self.plot_in_db.lower();
-        if self.plot_in_db == 'y':
-            self.rssi = 20*log10(self.rssi);
+
+    def show_plot(self, azm_cross_section=None):
+        # self.plot_in_db = input('plot pattern data in dB? (y/n): ');
+        # self.plot_in_db = self.plot_in_db.lower();
+        if azm_cross_section is None:
+            selection = input('Select either elevation or azimuth angle as primary axis:\n\n   1:  AZIMUTH\n   2:  ELEVATION\n\n>> ')
+            if '1' in selection:
+                print("USING AZIMUTH")
+                azm_cross_section = True
+            elif '2' in selection:
+                print("USING ELEVATION")
+                azm_cross_section = False
+            else:
+                print("INVALID INPUT. Exiting...")
+                return
+        rssi = self.rssi.copy()
+        plot_in_db = 'y' in input('plot pattern data in dB? (y/n)')
+        if plot_in_db:
+            rssi = 20*log10(self.rssi);
             for i in range(len(self.rssi)):
-                if self.rssi[i] < -20 :
-                    self.rssi[i] = -20;
+                if rssi[i] < -20 :
+                    rssi[i] = -20;
 
 
             for i in range(len(self.data)):
                 self.data[i][3] = 20 * log10(self.data[i][3])
                 self.data[i][3] = -20 if self.data[i][3] < -20 else self.data[i][3]
+
+        ax = plt.subplot(111, projection='polar')
+        theta = [angle*(math.pi/180) for angle in self.mast_angles]
+        phi = [math.radians(angle) for angle in self.arm_angles]
+        if azm_cross_section:
+            ax.plot(theta, rssi)
+        else:
+            ax.plot(phi, rssi)
+#        ax.set_rmax(20.0)
+        if plot_in_db:
+            ax.set_rticks([-20, -15, -10, -5, 0]);
+#        ax.set_rticks([-20,-16,-12,-8,-4,0]);
+#        ax.set_rticks([-18, -15, -12, -9, -6, -3, 0]);
+#        ax.set_rlabel_position(-22.5)
+#        ax.set_xticklabels(['0', '45', '90', '135', '180', '-135', '-90', '-45'])
+#        ax.grid(True)
+        ax.set_title(self.title, va="bottom")
+        ax.set_theta_zero_location("N")
+        plt.show()
 
     def show_each_elv(self):
         print(self.elv_angles)
@@ -80,19 +113,4 @@ class PlotGraph():
             plt.show()
 
 #                                                        # plot the data
-    def show(self):
-        ax = plt.subplot(111, projection='polar')
-        theta = [angle*(math.pi/180) for angle in self.mast_angles]
-        ax.plot(theta, self.rssi)
-#        ax.set_rmax(20.0)
-        if self.plot_in_db == 'y':
-            ax.set_rticks([-20, -15, -10, -5, 0]);
-#        ax.set_rticks([-20,-16,-12,-8,-4,0]);
-#        ax.set_rticks([-18, -15, -12, -9, -6, -3, 0]);
-#        ax.set_rlabel_position(-22.5)
-#        ax.set_xticklabels(['0', '45', '90', '135', '180', '-135', '-90', '-45'])
-#        ax.grid(True)
-        ax.set_title(self.title, va="bottom")
-        ax.set_theta_zero_location("N")
-        plt.show()
 

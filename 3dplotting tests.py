@@ -93,7 +93,7 @@ fileData = get_plot_data(text);
 
 
 plot_graph = PlotGraph(fileData, fileName)
-plot_graph.show_each_elv()
+# plot_graph.show_each_elv()
 plot_graph.show()
 
 # print(fileData)
