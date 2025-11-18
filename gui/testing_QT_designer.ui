@@ -40,6 +40,9 @@
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QPushButton" name="pushButton_7">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
          <string>SAVE PLOT</string>
         </property>
@@ -65,6 +68,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButton_8">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
          <string>CLEAR PLOT</string>
         </property>
@@ -86,13 +92,22 @@
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QPushButton" name="set0Button">
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
       <property name="text">
        <string>SET 0</string>
+      </property>
+      <property name="default">
+       <bool>false</bool>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QPushButton" name="lockUnlockButton">
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
       <property name="text">
        <string>LOCK/UNLOCK</string>
       </property>
@@ -102,6 +117,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_6">
       <item>
        <widget class="QPushButton" name="moveAzmuithByButton">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
          <string>MOVE AZMUITH BY:</string>
         </property>
@@ -120,6 +138,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_5">
       <item>
        <widget class="QPushButton" name="moveElevationByButton">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
          <string>MOVE ELEVATION BY:</string>
         </property>
@@ -138,6 +159,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_8">
       <item>
        <widget class="QPushButton" name="moveAzmuithToButton">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
          <string>MOVE AZMUITH TO:</string>
         </property>
@@ -156,6 +180,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
        <widget class="QPushButton" name="moveElevationToButton">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
          <string>MOVE ELEVATION TO:</string>
         </property>
@@ -238,16 +265,26 @@
    <layout class="QVBoxLayout" name="verticalLayout_9">
     <item>
      <widget class="QPushButton" name="fileExploreAccess">
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
       <property name="text">
        <string>File Edit View</string>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QComboBox" name="comboBox_2"/>
+     <widget class="QComboBox" name="comboBox_2">
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="QPushButton" name="startCancelButton_2">
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
       <property name="text">
        <string>START/CANCEL</string>
       </property>
@@ -255,6 +292,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="editParams_2">
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
       <property name="text">
        <string>PARAMETERS</string>
       </property>
