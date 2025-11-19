@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>898</width>
-    <height>669</height>
+    <width>932</width>
+    <height>699</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,12 +15,134 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QFormLayout" name="formLayout">
+    <property name="horizontalSpacing">
+     <number>12</number>
+    </property>
+    <property name="verticalSpacing">
+     <number>12</number>
+    </property>
+    <property name="leftMargin">
+     <number>18</number>
+    </property>
+    <property name="topMargin">
+     <number>18</number>
+    </property>
+    <property name="rightMargin">
+     <number>18</number>
+    </property>
+    <property name="bottomMargin">
+     <number>18</number>
+    </property>
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout_9">
+      <item>
+       <widget class="QComboBox" name="comboBox_2">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <item>
+         <property name="text">
+          <string>3D Scan</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2D Scan θ</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2D Scan φ</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="startCancelButton">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>START/CANCEL</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="load_params_b">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="toolTip">
+         <string>Coming Soon...</string>
+        </property>
+        <property name="text">
+         <string>LOAD PARAMETERS FILE</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="view_params_b">
+        <property name="text">
+         <string>VIEW PARAMETERS</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QLabel" name="mastStepsLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string># OF φ STEPS</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="mast_steps">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLabel" name="armStepsLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string># OF θ STEPS</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="arm_steps">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
     <item row="0" column="1">
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="MplWidget" name="matplotlib_widget" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -159,6 +281,12 @@
         <property name="icon">
          <iconset theme="input-keyboard"/>
         </property>
+        <property name="iconSize">
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item>
@@ -247,99 +375,6 @@
       </item>
      </layout>
     </item>
-    <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_9">
-      <property name="topMargin">
-       <number>17</number>
-      </property>
-      <item>
-       <widget class="QComboBox" name="comboBox_2">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <item>
-         <property name="text">
-          <string>3D Scan</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>2D Scan θ</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>2D Scan φ</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="startCancelButton">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>START/CANCEL</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="load_parameters_button">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string>LOAD PARAMETERS FILE</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QGridLayout" name="gridLayout_2">
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="arm_steps">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="mastStepsLabel">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string># OF φ STEPS</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLineEdit" name="mast_steps">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="armStepsLabel">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string># OF θ STEPS</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -347,7 +382,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>898</width>
+     <width>932</width>
      <height>26</height>
     </rect>
    </property>
@@ -361,8 +396,15 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <addaction name="actionEdit_parameters"/>
-    <addaction name="actionLoad_Parameters"/>
+    <widget class="QMenu" name="menuParameters">
+     <property name="title">
+      <string>Parameters</string>
+     </property>
+     <addaction name="actionEdit_Parameters"/>
+     <addaction name="actionView_Parameters"/>
+     <addaction name="actionLoad_Parameters"/>
+    </widget>
+    <addaction name="menuParameters"/>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
@@ -380,19 +422,24 @@
     <string>Open Scan</string>
    </property>
   </action>
-  <action name="actionEdit_parameters">
+  <action name="actionMove_with_Arrow_Keys">
+   <property name="text">
+    <string>Move AUT with Arrow Keys</string>
+   </property>
+  </action>
+  <action name="actionEdit_Parameters">
    <property name="text">
     <string>Edit Parameters</string>
+   </property>
+  </action>
+  <action name="actionView_Parameters">
+   <property name="text">
+    <string>View Parameters</string>
    </property>
   </action>
   <action name="actionLoad_Parameters">
    <property name="text">
     <string>Load Parameters</string>
-   </property>
-  </action>
-  <action name="actionMove_with_Arrow_Keys">
-   <property name="text">
-    <string>Move AUT with Arrow Keys</string>
    </property>
   </action>
  </widget>
