@@ -2,14 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
 import csv
-import sys
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument('filename', help="Path to the input file")
+parser.add_argument('--plot-layers', action='store_true', help='Plot each line before showing the 3d plot')
 
-filename = ''
-if len(sys.argv) > 1:
-    filename = sys.argv[1]
-else:
-    response = input("Use a file or simulated? (f for file, s for simulated)")
+args = parser.parse_args()
+
+filename = args.filename
+if not filename:
+    response = input("Use a file or show simulated? (f for file, s for simulated)")
     if 'f' in response:
         filename = input("Input the filename:\n>> ")
     elif 's' not in response:
@@ -22,7 +25,7 @@ if filename:
         content = list(rdr)
 
         trimmed = content[2:]
-        reduced = trimmed[::10]
+        reduced = trimmed[::2]
         data = [[float(d) for d in row] for row in reduced]
 else:
     N = 36
@@ -56,12 +59,33 @@ if not data:
     exit()
 
 
+data = [(np.radians(d[0]), np.radians(d[1]), d[2], d[3]) for d in data]
 
 p_flat = np.array([d[0] for d in data])
+
 t_flat = np.array([d[1] for d in data])
+
 r_flat = np.array([float(d[3]) - float(d[2]) for d in data])
 r_norm = r_flat / np.max(r_flat)
 r_db = 20 * np.log10(r_norm)
+
+if args.plot_layers:
+    theta_values = sorted(list(set([t for t in t_flat])))
+    while len(theta_values) > 10:
+        theta_values = theta_values[::2]
+
+    for tv in theta_values:
+        ps = np.array([d[0] for d in data if d[1] == tv])
+        rs = np.array([d[3] - d[2] for d in data if d[1] == tv])
+        rs_norm = rs / np.max(rs)
+        rs_db = 20 * np.log10(rs_norm)
+        print("phis:", len(ps), ps)
+        print("rs_db:", len(rs_db), rs_db)
+        ax = plt.subplot(111, projection='polar')
+        ax.plot(ps, rs_db)
+        ax.set_title(r"$\theta = $" + str(tv))
+        plt.show()
+
 
 
 t, p = np.meshgrid(t_flat, p_flat)

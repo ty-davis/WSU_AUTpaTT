@@ -33,6 +33,7 @@ import TxRadio
 from MotorController import MotorController
 import matplotlib.pyplot as plt
 import time
+import datetime
 import os
 
 from motor_connection import MotorConnection
@@ -370,22 +371,22 @@ def do_AMscan_STM32(params):
     radio_tx_graph.start()
     motor_conn.connect()
     time.sleep(3)
-    print("Collecting data in a circle")
+    log("Collecting data in a circle")
     radio_rx_graph.start()
     motor_conn.send_command('MOVE_ELV_BY', 360)
     motor_conn.wait(20)
-    print("DONE WAITING")
+    log("DONE WAITING")
     radio_rx_graph.stop()
     radio_tx_graph.stop()
     time.sleep(1)
     motor_conn.disconnect()
     antenna_data = radio_rx_graph.vector_sink_0.data()
     n=len(antenna_data)
-    print("read {:d} data_points".format(n))
+    log("read {:d} data_points".format(n))
     antenna_pow = np.square(antenna_data)
     numangles = params["arm_steps"]
     binsize=int(n/numangles)
-    print("binsize= {:d}".format(binsize))
+    log("binsize= {:d}".format(binsize))
     avg=np.zeros(numangles)
     for i in range(numangles):
         avg[i]=np.sqrt(np.square(
@@ -397,7 +398,7 @@ def do_AMscan_STM32(params):
     plt.show()
     plt.plot(avg)
     plt.show()
-    print("avg {:d}".format(len(avg)),binsize)
+    log("avg {:d}".format(len(avg)),binsize)
     for i in range(len(avg)):
         datafile.write(
                 str(azm_angles[i]) + ',' + 
@@ -409,7 +410,7 @@ def do_AMscan_STM32(params):
             background_rssi[i], avg[i]))
 
     datafile.close();
-    print("datafile closed")
+    log("datafile closed")
 
     return AMantenna_data
 
@@ -436,27 +437,27 @@ def do_AMscan_STM32_old(params):
     radio_tx_graph.start()
     motor_conn.connect()
     time.sleep(3)
-    print("Moving to start angle")
+    log("Moving to start angle")
     motor_conn.send_command('MOVE_AZM_BY', 180)
     motor_conn.wait(10)
-    print("Collecting data while moving to end angle")
+    log("Collecting data while moving to end angle")
     radio_rx_graph.start()
     motor_conn.send_command('MOVE_AZM_BY', -360)
     motor_conn.wait(10)
     radio_rx_graph.stop()
     radio_tx_graph.stop()
-    print("Finished collection, return to 0")
+    log("Finished collection, return to 0")
     motor_conn.send_command('MOVE_AZM_BY', 180)
     motor_conn.wait(10)
     time.sleep(1)
     motor_conn.disconnect()
     antenna_data = radio_rx_graph.vector_sink_0.data()
     n=len(antenna_data)
-    print("read {:d} data_points".format(n))
+    log("read {:d} data_points".format(n))
     antenna_pow = np.square(antenna_data)
     numangles = params["mast_end_angle"]-params["mast_start_angle"] 
     binsize=int(n/numangles)
-    print("binsize= {:d}".format(binsize))
+    log("binsize= {:d}".format(binsize))
     avg=np.zeros(numangles)
     for i in range(numangles):
         avg[i]=np.sqrt(np.square(
@@ -468,7 +469,7 @@ def do_AMscan_STM32_old(params):
     plt.show()
     plt.plot(avg)
     plt.show()
-    print("avg {:d}".format(len(avg)),binsize)
+    log("avg {:d}".format(len(avg)),binsize)
     for i in range(len(avg)):
         datafile.write(
                 str(angles[i]) + ',' + 
@@ -480,9 +481,115 @@ def do_AMscan_STM32_old(params):
             background_rssi[i], avg[i]))
 
     datafile.close();
-    print("datafile closed")
+    log("datafile closed")
 
     return AMantenna_data
+
+def do_3Dscan_STM32_new(params):
+    motor_conn = MotorConnection(
+        port=params['usb_port'],
+        baudrate=params['baudrate'],
+        use_scalars=params['stm32_use_scalars'],
+        debug=params["debug_stm32"],
+    )
+    radio_tx_graph = TxRadio.RadioFlowGraph(
+        params["tx_radio_id"],
+        params["frequency"],
+        params["tx_freq_offset"])
+    radio_rx_graph = RxRadio.RadioFlowGraph(
+        params["rx_radio_id"], 
+        params["frequency"], 
+        params["rx_freq_offset"])
+    radio_tx_graph.start()
+    motor_conn.connect()
+    time.sleep(3)
+    log("Moving to start angle")
+    azm_start_angle = params["mast_start_angle"]
+    azm_end_angle = params["mast_end_angle"]
+    azm_steps = params["mast_steps"]
+
+    elv_start_angle = params["arm_start_angle"]
+    elv_end_angle = params["arm_end_angle"]
+    elv_steps = params["arm_steps"]
+    motor_conn.send_command("MOVE_AZM_BY", azm_start_angle)
+    motor_conn.wait(10)
+    motor_conn.send_command("MOVE_ELV_BY", elv_start_angle)
+    motor_conn.wait(10)
+
+    datafile = open_datafile(params)
+    AMantenna_data = []
+    azm_angles = np.linspace(azm_start_angle,
+                             azm_end_angle,
+                             azm_steps)
+    log(azm_angles)
+    if len(azm_angles) >= 2:
+        azm_diff = azm_angles[1] - azm_angles[0]
+    else:
+        azm_diff = 0
+
+    elv_distance = elv_end_angle - elv_start_angle
+
+    for i, azm_ang in enumerate(azm_angles):
+        if i != 0:
+            motor_conn.send_command("MOVE_AZM_BY", azm_diff)
+            motor_conn.wait(10)
+        log("COLLECTING FOR AZIMUTH:", azm_ang)
+        radio_rx_graph.start()
+        elv_movement = elv_distance * (1 if i % 2 == 0 else -1)
+        motor_conn.send_command("MOVE_ELV_BY", elv_distance)
+        motor_conn.wait(10)
+        radio_rx_graph.stop()
+        log("FINISHED COLLECTING")
+
+        antenna_data = radio_rx_graph.vector_sink_0.data()
+        n = len(antenna_data)
+        log(f"read {n} data points")
+        antenna_pow = np.square(antenna_data)
+        # numangles = elv_end_angle - elv_start_angle
+        binsize = int(n/elv_steps)
+        log(f"binsize= {binsize}")
+        avg = np.zeros(elv_steps)
+        for j in range(elv_steps):
+            avg[j]=np.sqrt(np.square(
+                antenna_data[j*binsize:(j+1)*binsize]).sum()/binsize)
+        angles = list(np.linspace(elv_start_angle, elv_end_angle, elv_steps))
+        log("ANGLES:", angles)
+        if i % 2 == 1:
+            angles = list(reversed(angles))
+        log("AVERAGE:", avg)
+        # arm_angle = elv
+        background_rssi = np.zeros(len(avg));
+        # log("avg {:d}".format(len(avg)),binsize)
+        for j in range(len(avg)):
+            datafile.write(
+                    str(azm_ang) + ',' + 
+                    str(angles[j]) + ',' + 
+                    str(background_rssi[j]) + ',' + 
+                    str(avg[j]) + '\n'
+                    )
+            AMantenna_data.append((azm_ang, angles[j], 
+                background_rssi[j], avg[j]))
+
+        log(dir(radio_rx_graph))
+        if hasattr(radio_rx_graph, 'vector_sink_0'):
+            log("CLEARING RADIO RX GRAPH")
+            radio_rx_graph.vector_sink_0.reset()
+
+
+    radio_tx_graph.stop()
+    datafile.close();
+    log("datafile closed")
+    log("Moving back to start")
+    motor_conn.send_command("MOVE_AZM_BY", -azm_end_angle)
+    motor_conn.wait(10)
+    motor_conn.send_command("MOVE_ELV_BY", -elv_end_angle)
+    motor_conn.wait(10)
+    motor_conn.disconnect();
+    log("FINISHED")
+
+    return AMantenna_data
+
+
 
 def do_3Dscan_STM32(params):
     motor_conn = MotorConnection(
@@ -502,158 +609,54 @@ def do_3Dscan_STM32(params):
     radio_tx_graph.start()
     motor_conn.connect()
     time.sleep(3)
-    print("Moving to start angle")
-    azm_start_angle = params["mast_start_angle"]
-    azm_end_angle = params["mast_end_angle"]
-    azm_steps = params["mast_steps"]
 
-    elv_start_angle = params["arm_start_angle"]
-    elv_end_angle = params["arm_end_angle"]
-    elv_steps = params["arm_steps"]
-    motor_conn.send_command("MOVE_AZM_BY", azm_start_angle)
-    motor_conn.wait(10)
-    motor_conn.send_command("MOVE_ELV_BY", elv_start_angle)
-    motor_conn.wait(10)
-
-    datafile = open_datafile(params)
-    AMantenna_data = []
-    azm_angles = np.linspace(azm_start_angle,
-                             azm_end_angle,
-                             azm_steps)
-    print(azm_angles)
-    if len(azm_angles) >= 2:
-        azm_diff = azm_angles[1] - azm_angles[0]
-    else:
-        azm_diff = 0
-
-    elv_distance = elv_end_angle - elv_start_angle
-
-    for i, azm_ang in enumerate(azm_angles):
-        if i != 0:
-            motor_conn.send_command("MOVE_AZM_BY", azm_diff)
-            motor_conn.wait(10)
-        print("COLLECTING FOR AZIMUTH:", azm_ang)
-        radio_rx_graph.start()
-        elv_movement = elv_distance * (1 if i % 2 == 0 else -1)
-        motor_conn.send_command("MOVE_ELV_BY", elv_distance)
-        motor_conn.wait(10)
-        radio_rx_graph.stop()
-        print("FINISHED COLLECTING")
-
-        antenna_data = radio_rx_graph.vector_sink_0.data()
-        n = len(antenna_data)
-        print(f"read {n} data points")
-        antenna_pow = np.square(antenna_data)
-        # numangles = elv_end_angle - elv_start_angle
-        binsize = int(n/elv_steps)
-        print(f"binsize= {binsize}")
-        avg = np.zeros(elv_steps)
-        for j in range(elv_steps):
-            avg[j]=np.sqrt(np.square(
-                antenna_data[j*binsize:(j+1)*binsize]).sum()/binsize)
-        angles = list(np.linspace(elv_start_angle, elv_end_angle, elv_steps))
-        print("ANGLES:", angles)
-        if i % 2 == 1:
-            angles = list(reversed(angles))
-        print("AVERAGE:", avg)
-        # arm_angle = elv
-        background_rssi = np.zeros(len(avg));
-        # print("avg {:d}".format(len(avg)),binsize)
-        for j in range(len(avg)):
-            datafile.write(
-                    str(azm_ang) + ',' + 
-                    str(angles[j]) + ',' + 
-                    str(background_rssi[j]) + ',' + 
-                    str(avg[j]) + '\n'
-                    )
-            AMantenna_data.append((azm_ang, angles[j], 
-                background_rssi[j], avg[j]))
-
-        print(dir(radio_rx_graph))
-        if hasattr(radio_rx_graph, 'vector_sink_0'):
-            print("CLEARING RADIO RX GRAPH")
-            radio_rx_graph.vector_sink_0.reset()
-
-
-    radio_tx_graph.stop()
-    datafile.close();
-    print("datafile closed")
-    print("Moving back to start")
-    motor_conn.send_command("MOVE_AZM_BY", -azm_end_angle)
-    motor_conn.wait(10)
-    motor_conn.send_command("MOVE_ELV_BY", -elv_end_angle)
-    motor_conn.wait(10)
-    motor_conn.disconnect();
-    print("FINISHED")
-
-    return AMantenna_data
-
-
-
-def do_3Dscan_STM32_old(params):
-    motor_conn = MotorConnection(
-        port=params['usb_port'],
-        baudrate=params['baudrate'],
-        use_scalars=params['stm32_use_scalars'],
-        debug=params["debug_stm32"],
-    )
-    radio_tx_graph = TxRadio.RadioFlowGraph(
-        params["tx_radio_id"],
-        params["frequency"],
-        params["tx_freq_offset"])
-    radio_rx_graph = RxRadio.RadioFlowGraph(
-        params["rx_radio_id"], 
-        params["frequency"], 
-        params["rx_freq_offset"])
-    radio_tx_graph.start()
-    motor_conn.connect()
-    time.sleep(3)
-
-    print("Moving to start angle")
+    log("Moving to start angle")
     start_elv_angle = params["arm_start_angle"]
     end_elv_angle = params["arm_end_angle"]
     elv_steps = params["arm_steps"]
     elv_angles = np.linspace(start_elv_angle, end_elv_angle, elv_steps)
     elv_step = elv_angles[1] - elv_angles[0] if len(elv_angles > 1) else 0
 
-    motor_conn.send_command("MOVE_AZM_BY", 180)
-    motor_conn.wait(10)
-    motor_conn.send_command("MOVE_ELV_BY", start_elv_angle)
-    motor_conn.wait(10)
+    # motor_conn.send_command("MOVE_AZM_BY", 180)
+    # motor_conn.wait(10)
+    # motor_conn.send_command("MOVE_ELV_BY", start_elv_angle)
+    # motor_conn.wait(10)
     datafile = open_datafile(params)
     AMantenna_data = []
 
     for i, elv in enumerate(elv_angles):
-        print(f"STARTING FOR ELEVATION: {elv} and I: {i}")
+        log(f"STARTING FOR ELEVATION: {elv} and I: {i}")
         if i != 0:
+            log("MOVING ELEVATION ANGLE")
             motor_conn.send_command("MOVE_ELV_BY", elv_step)
-            motor_conn.wait(10)
-        print("ELEVATION:", elv)
-        print("Collecting data while moving to end angle")
+            motor_conn.wait(20)
+        log("ELEVATION:", elv)
+        log("Collecting data while moving to end angle")
         radio_rx_graph.start()
         motor_conn.send_command("MOVE_AZM_BY", -360 * (1 if i % 2 == 0 else -1))
-        motor_conn.wait(10)
+        motor_conn.wait(20)
         radio_rx_graph.stop()
-        print("Finished collecting")
+        log("Finished collecting")
 
         antenna_data = radio_rx_graph.vector_sink_0.data()
         n = len(antenna_data)
-        print(f"read {n} data points")
+        log(f"read {n} data points")
         antenna_pow = np.square(antenna_data)
         numangles = params['mast_end_angle'] - params['mast_start_angle']
         binsize = int(n/numangles)
-        print(f"binsize= {binsize}")
+        log(f"binsize= {binsize}")
         avg = np.zeros(numangles)
         for j in range(numangles):
             avg[j]=np.sqrt(np.square(
                 antenna_data[j*binsize:(j+1)*binsize]).sum()/binsize)
+        angles = range(int(params["mast_start_angle"]), int(params["mast_end_angle"]), 1)
         if i % 2 == 0:
-            angles = range(int(params["mast_start_angle"]), int(params["mast_end_angle"]), 1)
+            angles = angles
         else:
             angles = list(reversed(angles))
         arm_angle = elv
         background_rssi = np.zeros(len(avg));
-        print("avg {:d}".format(len(avg)),binsize)
+        log("avg {:d}".format(len(avg)),binsize)
         for j in range(len(avg)):
             datafile.write(
                     str(angles[j]) + ',' + 
@@ -664,20 +667,19 @@ def do_3Dscan_STM32_old(params):
             AMantenna_data.append((angles[j], elv, 
                 background_rssi[j], avg[j]))
 
-        print(dir(radio_rx_graph))
         if hasattr(radio_rx_graph, 'vector_sink_0'):
-            print("CLEARING RADIO RX GRAPH")
+            log("CLEARING RADIO RX GRAPH")
             radio_rx_graph.vector_sink_0.reset()
     radio_tx_graph.stop()
     datafile.close();
-    print("datafile closed")
-    print("Moving back to start")
+    log("datafile closed")
+    log("Moving back to start")
     motor_conn.send_command("MOVE_AZM_BY", 180)
     motor_conn.wait(10)
     motor_conn.send_command("MOVE_ELV_BY", -end_elv_angle)
     motor_conn.wait(10)
     motor_conn.disconnect();
-    print("FINISHED")
+    log("FINISHED")
 
     return AMantenna_data
 
@@ -752,3 +754,6 @@ def PlotFiles():
     plt.legend(loc="lower center", bbox_to_anchor=(1, 1))
     plt.show()
 #--------------------------------------------------------------------------EoF
+
+def log(*args):
+    print(f"{datetime.datetime.now()}: ", *args)
