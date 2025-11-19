@@ -14,6 +14,7 @@ class MplWidget(QWidget):
         
         # Create 3D axes
         self.axes = self.figure.add_subplot(111, projection='3d')
+        self.figure.tight_layout()
 
         # Create a navigation toolbar
         self.toolbar = NavigationToolbar(self.canvas, self)

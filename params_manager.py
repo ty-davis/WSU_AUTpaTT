@@ -2,10 +2,9 @@ import json
 
 class ParamsManager:
     def __init__(self, params_file='params.json'):
-        self.params = ParamsManager.load_params(params_file)
+        self.params = self.load_params(params_file)
 
-    @staticmethod
-    def load_params(params_file=None):
+    def load_params(self, params_file=None):
         try:
             defaults=json.load(open("params_default.json"))
         except Exception as e:
@@ -37,6 +36,7 @@ class ParamsManager:
         if defaults["frequency"] < 30e6 or defaults["frequency"] > 6e9:
             #raise Excpetion("Frequency {:e} out of range".format(defaults["frequency"]))
             raise Exception("Frequency {:e} out of range".format(defaults["frequency"]))
+        self.params = defaults
         return defaults
 
     @staticmethod

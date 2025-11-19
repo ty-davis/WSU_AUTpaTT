@@ -6,14 +6,25 @@ import plotting
 import matplotlib.pyplot as plt
 from params_manager import ParamsManager
 import pprint
+from motor_connection import MotorConnection
+from serial.serialutil import SerialException
+from scans import all_scans, AbstractScan
+from datetime import datetime
 
 class MyMainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         uic.loadUi("./gui/window.ui", self)
 
+        self.setWindowTitle("WSU AUTpaTTv3")
+
+
         # load the parameters
         self.params_man = ParamsManager()
+
+        # configure the motor connection
+        self.motor_conn = None
+        self.connect_to_stm32()
 
         # actions
         self.actionOpen_scan.triggered.connect(self.open_scan_file)
@@ -27,9 +38,45 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.move_with_arrows_button.clicked.connect(self.actionMove_with_Arrow_Keys.trigger)
         self.view_params_b.clicked.connect(self.actionView_Parameters.trigger)
         self.load_params_b.clicked.connect(self.load_parameters)
+        self.start_button.clicked.connect(self.start_test)
+        self.cancel_button.clicked.connect(self.cancel_test)
+
+        # fix some state stuff
+        self.cancel_button.hide()
+
+        for scan in all_scans:
+            self.select_scan.addItem(scan.name, scan)
 
     def edit_parameters(self):
         ...
+
+    def log(self, *args):
+        self.status_label.setText(' '.join(args))
+        print(datetime.now(), *args)
+
+    def start_test(self):
+        scan: AbstractScan = self.select_scan.currentData()
+        scan.populate_state(self.motor_conn, self.params_man.params, self.log)
+
+        # toggle start/cancel button and disable a bunch of stuff
+        self.start_button.hide()
+        self.cancel_button.show()
+
+    def cancel_test(self):
+        self.cancel_button.hide()
+        self.start_button.show()
+
+    def connect_to_stm32(self):
+        self.motor_conn = MotorConnection(
+            port=self.params_man.params['usb_port'],
+            baudrate=self.params_man.params['baudrate'],
+            use_scalars=self.params_man.params['stm32_use_scalars'],
+            debug=self.params_man.params['debug_stm32'],
+        )
+        try:
+            self.motor_conn.connect()
+        except SerialException as e:
+            print(f"Error connecting to stm32: {e}")
 
     def load_parameters(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -72,9 +119,16 @@ class MyMainWindow(QtWidgets.QMainWindow):
             print("READY")
 
 class ArrowsDialog(QtWidgets.QDialog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent, motor_conn: MotorConnection, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         uic.loadUi("./gui/arrows_dialog.ui", self)
+
+        if not motor_conn.serial_connection:
+            try:
+                motor_conn.connect()
+            except Exception as e:
+                self.label.setText(f"A connection to the STM32 could not be made: {e}")
+                return
 
         up_shortcut = QShortcut(QKeySequence('Up'), self)
         left_shortcut = QShortcut(QKeySequence('Left'), self)
