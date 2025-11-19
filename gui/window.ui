@@ -521,6 +521,7 @@
      <string>&amp;File</string>
     </property>
     <addaction name="actionOpen_scan"/>
+    <addaction name="actionOpen_Log_File"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -549,7 +550,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionOpen_scan">
    <property name="text">
-    <string>Open Scan</string>
+    <string>View Scan</string>
    </property>
   </action>
   <action name="actionMove_with_Arrow_Keys">
@@ -575,6 +576,11 @@
   <action name="actionStart_Scan">
    <property name="text">
     <string>Start Scan</string>
+   </property>
+  </action>
+  <action name="actionOpen_Log_File">
+   <property name="text">
+    <string>Open Log File</string>
    </property>
   </action>
  </widget>
