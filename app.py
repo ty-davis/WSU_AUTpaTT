@@ -1,6 +1,7 @@
 import sys
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtGui import QShortcut, QKeySequence
+from PyQt6.QtCore import QTimer
 import plotting
 import matplotlib.pyplot as plt
 from params_manager import ParamsManager
@@ -11,6 +12,9 @@ from scans import all_scans, AbstractScan
 from datetime import datetime
 import asyncio
 import qasync
+import json
+from pathlib import Path
+
 
 class MyMainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -19,6 +23,10 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         self.setWindowTitle("WSU AUTpaTTv3")
 
+        # Create timer
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_lcd)
+        self.timer.start(100)   # update every 100 ms
 
         # load the parameters
         self.params_man = ParamsManager()
@@ -44,15 +52,65 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         self.start_button.clicked.connect(self.start_test)
         self.cancel_button.clicked.connect(self.cancel_test)
+        self.moveAzmuithByButton.clicked.connect(lambda: self.move_motor_by('azm'))
+        self.moveElevationByButton.clicked.connect(lambda: self.move_motor_by('elv'))
+        self.moveAzmuithToButton.clicked.connect(lambda: self.move_motor_by('azm_to'))
+        self.moveElevationToButton.clicked.connect(lambda: self.move_motor_by('elv_to'))
+        self.lockUnlockButton.clicked.connect(lambda: self.move_motor_by('unlock'))
 
+        #need to make buttons for this to work talk to ty.
+        #self.mast_steps.clicked.connect(lambda: self.update_params('azm_steps'))
+        #self.arm_steps.clicked.connect(lambda: self.update_params('elv_steps'))
         # fix some state stuff
         self.cancel_button.hide()
 
         for scan in all_scans:
             self.select_scan.addItem(scan.name, scan)
+    
+    def update_params(self, param):
+        #Open the parameters file
+        PARAMS_PATH = Path("params.json")
+        if not PARAMS_PATH.exists():
+            raise FileNotFoundError(f"{PARAMS_PATH} not found")
+        with PARAMS_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        # Update the parameters value
+        if param == 'azm_steps':
+            data["mast_steps"] = int(self.mast_steps.Text())
+        elif param == 'elv_steps':
+            data["arm_steps"] = int(self.arm_steps.Text())
+        # Write back to the file
+        with PARAMS_PATH.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+    def update_lcd(self):
+        self.motor_conn.serial_connection
+        azm, elv = self.motor_conn.send_command("gp", "")
+        self.ui.azmuithLocation.display(self.azm)
+        self.ui.elevationLocation.display(self.elv)
 
     def edit_parameters(self):
         ...
+
+    def move_motor_by(self, dir):
+        ...
+        if self.motor_conn.serial_connection:
+            if dir == 'azm':
+                amount = int(self.moveAzimuthByValue.Text())
+                self.motor_conn.send_command("ma", amount)
+            elif dir == 'elv':
+                amount = int(self.moveElevationByValue.Text())
+                self.motor_conn.send_command("me", amount)
+            elif dir == 'azm_to':
+                amount = int(self.moveAzmuithToValue.Text())
+                self.motor_conn.send_command("mat", amount)
+            elif dir == 'elv_to':
+                amount = int(self.moveElevationToValue.Text())
+                self.motor_conn.send_command("met", amount)
+            elif dir == 'unlock':
+                self.motor_conn.send_command("c", "")
+        else:
+            print("error connecting to motors")
 
 
     def log(self, *args):
