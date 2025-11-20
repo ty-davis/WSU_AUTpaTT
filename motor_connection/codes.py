@@ -6,7 +6,7 @@ STATUS_CODES = {
         "alias": 'gp',
         "params": [],
         "scalar": None,
-        "response_params": ['int16_t', 'int16_t'],
+        "response_params": ['int32_t', 'int32_t'],
         "response_scalar": [10, 10],
         "response_names": ['azm', 'elv']
     },
@@ -190,6 +190,15 @@ STATUS_CODES = {
         "response_scalar": None,
         "response_names": None
     },
+    "TOGGLE_LOCK": {
+        "code": 0x2,
+        "alias": 'tl',
+        "params": [],
+        "scalar": None,
+        "response_params": None,
+        "response_scalar": None,
+        "response_names": None
+    }
 }
 STATUS_ALIASES = {v['alias']: k for k, v in STATUS_CODES.items()}
 

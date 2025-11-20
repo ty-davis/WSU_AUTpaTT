@@ -48,7 +48,7 @@ class MotorConnection:
             True if successful, False if internal error occurred
         """
         while True:
-            response = self.send_command('READY')
+            response = await self.send_command_async('READY')
             if response['status'] == 'OK':
                 return True
             elif response['status'] == 'INTL_ERROR':
@@ -86,8 +86,22 @@ class MotorConnection:
         self.serial_connection.flush()
 
         # read the response
-        self.serial_connection.timeout = 0.2
+        self.serial_connection.timeout = 0.05
         data = self.serial_connection.read(256)
+        response = self.parse_response(data, com[0])
+        return response
+
+    async def send_command_async(self, command: str, *params):
+        com = self.build_command(command, params)
+        assert type(com) == bytearray, "Command could not be built."
+        if not self.serial_connection:
+            raise Exception("Command could not be sent, initialize serial connection first")
+
+        self.serial_connection.write(com)
+        self.serial_connection.flush()
+
+        self.serial_connection.timeout = 0.05
+        data = await asyncio.to_thread(self.serial_connection.read, 256)
         response = self.parse_response(data, com[0])
         return response
 

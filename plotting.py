@@ -60,6 +60,7 @@ def read_csv_file(filename):
 def write_csv_file(filep, data):
     wtr = csv.writer(filep)
     wtr.writerows(data)
+    filep.flush()
 
 def process_data_3d(data):
     data = [(np.radians(d[0]), np.radians(d[1]), d[2], d[3]) for d in data]

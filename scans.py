@@ -70,15 +70,18 @@ class ThreeDPhiCut(AbstractScan):
         theta_angles = np.linspace(theta_start, theta_end, theta_steps)
         theta_step = theta_angles[1] - theta_angles[0] if len(theta_angles) > 1 else 0
 
+        phi_steps = self.params['mast_steps']
+        phi_angles = np.linspace(0, 360, phi_steps)
+
         self.log(f"STARTING SCAN: {self.name}")
         radio_tx_graph.start()
         await asyncio.sleep(3)
 
         data = np.array([])
         for i, theta in enumerate(theta_angles):
-            self.progress_bar.setValue(i / theta_steps)
+            self.progress_bar.setValue(round(i / theta_steps * 100))
             if i != 0:
-                self.motor_conn.send_command("MOVE_ELV_BY", elv_step)
+                self.motor_conn.send_command("MOVE_ELV_BY", theta_step)
                 await self.motor_conn.wait_async(20)
             self.log("COLLECTING DATA AT θ: ", theta)
             radio_rx_graph.start()
@@ -90,7 +93,7 @@ class ThreeDPhiCut(AbstractScan):
 
             n = len(antenna_data)
             self.log(f"Read {n} data points")
-            num_samples = self.params["arm_steps"]
+            num_samples = phi_steps
             bin_size = n //num_samples
             avg = np.zeros(num_samples)
             for i in range(num_samples):
@@ -99,9 +102,10 @@ class ThreeDPhiCut(AbstractScan):
                       .sum()/bin_size
                 )
 
-            phi_angles = np.array([])
+            phi_angles_corrected = np.array(reversed(list(phi_angles))) if i % 2 == 0 else phi_angles
             background_rssi = np.zeros(len(avg))
-            cut_data = np.column_stack((phi_angles, theta_angles, background_rssi, avg))
+            theta_row = np.array([theta for _ in phi_angles])
+            cut_data = np.column_stack((phi_angles_corrected, theta_row, background_rssi, avg))
             if not data.size:
                 data = cut_data.copy()
             else:
@@ -114,7 +118,7 @@ class ThreeDPhiCut(AbstractScan):
 
         self.progress_bar.setValue(100)
         self.log("SCAN COMPLETE")
-        return results
+        return data
 
 class ThreeDThetaCut(AbstractScan):
     def __init__(self):

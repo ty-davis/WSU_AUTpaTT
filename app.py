@@ -14,8 +14,6 @@ from scans import all_scans, AbstractScan
 from datetime import datetime
 import asyncio
 import qasync
-import json
-from pathlib import Path
 
 
 class MyMainWindow(QtWidgets.QMainWindow):
@@ -27,7 +25,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         # Create timer
         self.timer = QTimer()
-        self.timer.timeout.connect(self.update_lcd)
+        self.timer.timeout.connect(self.poll_position)
         self.timer.start(100)   # update every 100 ms
 
         # load the parameters
@@ -39,9 +37,9 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.motor_conn = None
         self.connect_to_stm32()
 
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.poll_position)
-        self.timer.start(1000)
+        # self.timer = QTimer()
+        # self.timer.timeout.connect(self.poll_position)
+        # self.timer.start(1000)
 
         # actions
         self.actionOpen_scan.triggered.connect(self.open_scan_file)
@@ -58,53 +56,48 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         self.start_button.clicked.connect(self.run_test)
         self.cancel_button.clicked.connect(self.cancel_test)
-        self.moveAzmuithByButton.clicked.connect(lambda: self.move_motor_by('azm'))
+        self.moveAzimuthByButton.clicked.connect(lambda: self.move_motor_by('azm'))
         self.moveElevationByButton.clicked.connect(lambda: self.move_motor_by('elv'))
-        self.moveAzmuithToButton.clicked.connect(lambda: self.move_motor_by('azm_to'))
+        self.moveAzimuthToButton.clicked.connect(lambda: self.move_motor_by('azm_to'))
         self.moveElevationToButton.clicked.connect(lambda: self.move_motor_by('elv_to'))
-        self.lockUnlockButton.clicked.connect(lambda: self.move_motor_by('unlock'))
+        self.calibrateButton.clicked.connect(lambda: self.move_motor_by('calibrate'))
+        self.lockUnlockButton.clicked.connect(lambda: self.move_motor_by('toggle_lock'))
 
-        #need to make buttons for this to work talk to ty.
-        #self.mast_steps.clicked.connect(lambda: self.update_params('azm_steps'))
-        #self.arm_steps.clicked.connect(lambda: self.update_params('elv_steps'))
-        # fix some state stuff
         self.cancel_button.hide()
 
         for scan in all_scans:
             self.select_scan.addItem(scan.name, scan)
     
-    def update_params(self, param):
-        #Open the parameters file
-        PARAMS_PATH = Path("params.json")
-        if not PARAMS_PATH.exists():
-            raise FileNotFoundError(f"{PARAMS_PATH} not found")
-        with PARAMS_PATH.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        # Update the parameters value
-        if param == 'azm_steps':
-            data["mast_steps"] = int(self.mast_steps.Text())
-        elif param == 'elv_steps':
-            data["arm_steps"] = int(self.arm_steps.Text())
-        # Write back to the file
-        with PARAMS_PATH.open("w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
+    def update_params(self):
+        try:
+            self.params_man.params["mast_steps"] = int(self.mast_steps.text())
+        except ValueError:
+            pass
+
+        try:
+            self.params_man.params["arm_steps"] = int(self.arm_steps.text())
+        except ValueError:
+            pass
 
     def update_lcd(self):
         self.motor_conn.serial_connection
-        azm, elv = self.motor_conn.send_command("gp", "")
-        self.ui.azmuithLocation.display(self.azm)
-        self.ui.elevationLocation.display(self.elv)
+        azm, elv = self.motor_conn.send_command("gp")
+        self.log("UPDATING", azm, elv)
+        self.azimuthLocation.display(azm)
+        self.elevationLocation.display(elv)
 
-    def poll_position(self):
+    @qasync.asyncSlot()
+    async def poll_position(self):
+        assert self.motor_conn
         if not self.motor_conn.serial_connection:
             return
-        result = self.motor_conn.send_command("GET_POSITION")
-        azm = result['azm'] / 8
+        result = await self.motor_conn.send_command_async("GET_POSITION")
+        azm = int(result['azm']) / 8
         azm_degrees = azm * 10000 / self.params_man.params['azm_pulse_rev'] * 360 / self.params_man.params['azm_tooth_ratio']
-        elv = result['elv'] / 8
+        elv = int(result['elv']) / 8
         elv_degrees = elv * 10000 / self.params_man.params['elv_pulse_rev'] * 360 / self.params_man.params['elv_tooth_ratio']
-        self.azimuthLocation.display(azm_degrees)
-        self.elevationLocation.display(elv_degrees)
+        self.azimuthLocation.display(round(azm_degrees))
+        self.elevationLocation.display(round(elv_degrees))
 
     def edit_parameters(self):
         ...
@@ -112,23 +105,23 @@ class MyMainWindow(QtWidgets.QMainWindow):
     def move_motor_by(self, dir):
         if self.motor_conn.serial_connection:
             if dir == 'azm':
-                amount = int(self.moveAzimuthByValue.Text())
+                amount = int(self.moveAzimuthByValue.text())
                 self.motor_conn.send_command("ma", amount)
             elif dir == 'elv':
-                amount = int(self.moveElevationByValue.Text())
+                amount = int(self.moveElevationByValue.text())
                 self.motor_conn.send_command("me", amount)
             elif dir == 'azm_to':
-                amount = int(self.moveAzmuithToValue.Text())
+                amount = int(self.moveAzimuthToValue.text())
                 self.motor_conn.send_command("mat", amount)
             elif dir == 'elv_to':
-                amount = int(self.moveElevationToValue.Text())
+                amount = int(self.moveElevationToValue.text())
                 self.motor_conn.send_command("met", amount)
-            elif dir == 'unlock':
-                self.motor_conn.send_command("c", "")
+            elif dir == 'calibrate':
+                self.motor_conn.send_command("c")
+            elif dir == 'toggle_lock':
+                self.motor_conn.send_command("tl")
         else:
             print("error connecting to motors")
-
-
 
 
     def log(self, *args):
@@ -137,6 +130,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
     @qasync.asyncSlot()
     async def run_test(self):
+        self.update_params()
         scan: AbstractScan = self.select_scan.currentData()
         scan.reset_cancel()
         self.progress_bar.setValue(0)
@@ -147,6 +141,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
                             self.progress_bar)
         self.open_datafile()
 
+        results = None
         try:
             self.start_button.hide()
             self.cancel_button.show()
@@ -155,16 +150,20 @@ class MyMainWindow(QtWidgets.QMainWindow):
             results = await scan.run_procedure()
             # toggle start/cancel button and disable a bunch of stuff
 
+            if self.datafile:
+                self.log(f"Writing test results to file: {self.datafile.name}")
+                plotting.write_csv_file(self.datafile, results)
+            else:
+                self.log(f"NO DATAFILE TO WRITE TO")
             self.plot_data(results)
-            return results
         except asyncio.CancelledError:
             self.log("Scan cancelled by user")
         finally:
             self.cancel_button.hide()
             self.start_button.show()
+            self.close_datafile()
 
-        self.log(f"Writing test results to file: {self.datafile}")
-        plotting.write_csv_file(self.datafile, results)
+        return results
 
 
     def cancel_test(self):
@@ -253,7 +252,13 @@ class MyMainWindow(QtWidgets.QMainWindow):
         datafile_fp.write(self.params_man.params["notes"]+"\n")
         datafile_fp.write("% Mast Angle, Arm Angle, Background RSSI, Transmission RSSI\n")
         self.datafile = datafile_fp
+        self.filePathLabel.setText(self.datafile.name)
         return datafile_fp
+
+    def close_datafile(self):
+        self.datafile.flush()
+        self.datafile.close()
+        self.datafile = None
 
 
 class ArrowsDialog(QtWidgets.QDialog):
