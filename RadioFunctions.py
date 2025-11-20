@@ -108,7 +108,7 @@ def rms(data):
 #
 #------------------------------------------------------------------------------
 def do_single(Tx=True):
-    params=LoadParams()
+    params=LoadParams('params.json')
     if Tx:
         radio_tx_graph = TxRadio.RadioFlowGraph(
             params["tx_radio_id"], 

@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Use the arrow keys to move the antenna mount.</string>
+        <string>Use the arrow keys to move the antenna mount. Hold shift to move by small amounts.</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1069</width>
-    <height>820</height>
+    <width>1149</width>
+    <height>845</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,7 +49,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLCDNumber" name="azmuithLocation"/>
+         <widget class="QLCDNumber" name="azimuthLocation">
+          <property name="autoFillBackground">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -68,7 +72,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QProgressBar" name="progressBar">
+       <widget class="QProgressBar" name="progress_bar">
         <property name="value">
          <number>0</number>
         </property>
@@ -79,19 +83,43 @@
     <item row="0" column="1">
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <widget class="MplWidget" name="matplotlib_widget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>1</number>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>548</width>
-          <height>400</height>
-         </size>
-        </property>
+        <widget class="QWidget" name="tab3d">
+         <attribute name="title">
+          <string>3D</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_10">
+          <item>
+           <widget class="MplWidget3d" name="plot_3d" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>548</width>
+              <height>400</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab2d">
+         <attribute name="title">
+          <string>2D</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_11">
+          <item>
+           <widget class="MplWidget2d" name="plot_2d" native="true"/>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
       <item>
@@ -417,7 +445,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string># OF φ STEPS</string>
+           <string># OF φ SAMPLES</string>
           </property>
          </widget>
         </item>
@@ -441,7 +469,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string># OF θ STEPS</string>
+           <string># OF θ SAMPLES</string>
           </property>
          </widget>
         </item>
@@ -512,7 +540,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1069</width>
+     <width>1149</width>
      <height>26</height>
     </rect>
    </property>
@@ -586,7 +614,13 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MplWidget</class>
+   <class>MplWidget3d</class>
+   <extends>QWidget</extends>
+   <header>mplwidget</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MplWidget2d</class>
    <extends>QWidget</extends>
    <header>mplwidget</header>
    <container>1</container>

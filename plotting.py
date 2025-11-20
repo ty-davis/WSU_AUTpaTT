@@ -47,7 +47,7 @@ def main():
             wtr = csv.writer(fout)
             wtr.writerows(content)
 
-    process_data(data)
+    process_data_3d(data)
 
 def read_csv_file(filename):
     with open(filename, 'r') as fin:
@@ -57,8 +57,11 @@ def read_csv_file(filename):
         data = [[float(d) for d in row] for row in trimmed]
         return data
 
+def write_csv_file(filep, data):
+    wtr = csv.writer(filep)
+    wtr.writerows(data)
 
-def process_data(data):
+def process_data_3d(data):
     data = [(np.radians(d[0]), np.radians(d[1]), d[2], d[3]) for d in data]
 
     p_flat = np.array([d[0] for d in data])
@@ -85,8 +88,6 @@ def process_data(data):
             ax.set_title(r"$\theta = $" + str(tv))
             plt.show()
 
-
-
     x = r_norm * np.sin(t_flat) * np.cos(p_flat)
     y = r_norm * np.sin(t_flat) * np.sin(p_flat)
     z = r_norm * np.cos(t_flat)
@@ -94,12 +95,39 @@ def process_data(data):
 
     tri = Triangulation(p_flat, t_flat)
     return x, y, z, tri
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(x, y, z, triangles=tri.triangles, cmap=plt.cm.CMRmap, linewidths=0.5, antialiased=True)
+
+def process_data_2d(data):
+    if is_phi_cut(data):
+        angles = np.array([d[0] for d in data])
+    else:
+        angles = np.array([d[1] for d in data])
+
+    angles_rad = np.radians(angles)
+    r = np.array([d[3] for d in data]) - np.array([d[2] for d in data])
+
+    r_norm = r / np.max(r)
+    r_db = 20 * np.log10(r_norm)
+    return angles_rad, r_db
 
 
-    plt.show()
+def is_data_3d(data):
+    phi_angles = [d[0] for d in data]
+    theta_angles = [d[1] for d in data]
+    num_phi = len(set(phi_angles))
+    num_theta = len(set(theta_angles))
+    if min(num_phi, num_theta) == 1:
+        return False
+    return True
+
+def is_phi_cut(data):
+    theta_angles = [d[1] for d in data]
+    num_theta = len(set(theta_angles))
+    if num_theta == 1:
+        return True
+    return False
+
+def is_theta_cut(data):
+    return not is_phi_cut(data)
 
 if __name__ == '__main__':
     main()

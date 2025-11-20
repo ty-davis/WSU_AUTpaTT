@@ -6,6 +6,8 @@ import plotting
 import matplotlib.pyplot as plt
 from params_manager import ParamsManager
 import pprint
+import time
+import os
 from motor_connection import MotorConnection
 from serial.serialutil import SerialException
 from scans import all_scans, AbstractScan
@@ -37,6 +39,10 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.motor_conn = None
         self.connect_to_stm32()
 
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.poll_position)
+        self.timer.start(1000)
+
         # actions
         self.actionOpen_scan.triggered.connect(self.open_scan_file)
         self.actionMove_with_Arrow_Keys.triggered.connect(self.move_with_arrow_keys)
@@ -50,7 +56,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.view_params_b.clicked.connect(self.actionView_Parameters.trigger)
         self.load_params_b.clicked.connect(self.load_parameters)
 
-        self.start_button.clicked.connect(self.start_test)
+        self.start_button.clicked.connect(self.run_test)
         self.cancel_button.clicked.connect(self.cancel_test)
         self.moveAzmuithByButton.clicked.connect(lambda: self.move_motor_by('azm'))
         self.moveElevationByButton.clicked.connect(lambda: self.move_motor_by('elv'))
@@ -89,11 +95,21 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.ui.azmuithLocation.display(self.azm)
         self.ui.elevationLocation.display(self.elv)
 
+    def poll_position(self):
+        if not self.motor_conn.serial_connection:
+            return
+        result = self.motor_conn.send_command("GET_POSITION")
+        azm = result['azm'] / 8
+        azm_degrees = azm * 10000 / self.params_man.params['azm_pulse_rev'] * 360 / self.params_man.params['azm_tooth_ratio']
+        elv = result['elv'] / 8
+        elv_degrees = elv * 10000 / self.params_man.params['elv_pulse_rev'] * 360 / self.params_man.params['elv_tooth_ratio']
+        self.azimuthLocation.display(azm_degrees)
+        self.elevationLocation.display(elv_degrees)
+
     def edit_parameters(self):
         ...
 
     def move_motor_by(self, dir):
-        ...
         if self.motor_conn.serial_connection:
             if dir == 'azm':
                 amount = int(self.moveAzimuthByValue.Text())
@@ -113,26 +129,23 @@ class MyMainWindow(QtWidgets.QMainWindow):
             print("error connecting to motors")
 
 
+
+
     def log(self, *args):
-        self.status_label.setText(' '.join(args))
+        self.status_label.setText(' '.join([str(arg) for arg in args]))
         print(datetime.now(), *args)
 
-    # def start_test_sync(self):
-    #     try:
-    #         loop = asyncio.get_event_loop()
-    #     except RuntimeError:
-    #         loop = asyncio.new_event_loop()
-    #         asyncio.set_event_loop(loop)
-    #
-    #     loop.run_until_complete(self.start_test())
-
     @qasync.asyncSlot()
-    async def start_test(self):
+    async def run_test(self):
         scan: AbstractScan = self.select_scan.currentData()
-        print("HERE")
         scan.reset_cancel()
+        self.progress_bar.setValue(0)
 
-        scan.populate_state(self.motor_conn, self.params_man.params, self.log)
+        scan.populate_state(self.motor_conn,
+                            self.params_man.params,
+                            self.log,
+                            self.progress_bar)
+        self.open_datafile()
 
         try:
             self.start_button.hide()
@@ -142,12 +155,16 @@ class MyMainWindow(QtWidgets.QMainWindow):
             results = await scan.run_procedure()
             # toggle start/cancel button and disable a bunch of stuff
 
+            self.plot_data(results)
             return results
         except asyncio.CancelledError:
             self.log("Scan cancelled by user")
         finally:
             self.cancel_button.hide()
             self.start_button.show()
+
+        self.log(f"Writing test results to file: {self.datafile}")
+        plotting.write_csv_file(self.datafile, results)
 
 
     def cancel_test(self):
@@ -184,12 +201,35 @@ class MyMainWindow(QtWidgets.QMainWindow):
         result = dialog.exec()
 
     def move_with_arrow_keys(self):
-        dialog = ArrowsDialog(self)
+        dialog = ArrowsDialog(self, self.motor_conn)
         result = dialog.exec()
 
+    def plot_data(self, data):
+        if plotting.is_data_3d(data):
+            x, y, z, tri = plotting.process_data_3d(data)
+
+            self.tabWidget.setCurrentIndex(0)
+            self.clear_plot()
+            self.plot_3d.axes.plot_trisurf(x, y, z, triangles=tri.triangles, cmap=plt.cm.CMRmap, linewidths=0.5, antialiased=True)
+            self.plot_3d.canvas.draw()
+        else:
+            angles, r = plotting.process_data_2d(data)
+
+            self.tabWidget.setCurrentIndex(1)
+            self.clear_plot()
+            self.plot_2d.axes.plot(angles, r)
+            self.plot_2d.canvas.draw()
+
     def clear_plot(self):
-        self.matplotlib_widget.axes.clear()
-        self.matplotlib_widget.canvas.draw()
+        if self.tabWidget.currentIndex() == 0:
+            self.plot_3d.axes.clear()
+            self.plot_3d.canvas.draw()
+        else:
+            self.plot_2d.axes.clear()
+            if hasattr(self.plot_2d.axes, 'set_theta_zero_location'):
+                self.plot_2d.axes.set_theta_zero_location('N')
+                self.plot_2d.axes.set_theta_direction(-1) # clockwise
+            self.plot_2d.canvas.draw()
 
     def open_scan_file(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -202,17 +242,25 @@ class MyMainWindow(QtWidgets.QMainWindow):
         if file_path:
             print(f"Opening file now: {file_path}")
             data = plotting.read_csv_file(file_path)
-            x, y, z, tri = plotting.process_data(data)
+            self.plot_data(data)
 
-            self.clear_plot()
-            self.matplotlib_widget.axes.plot_trisurf(x, y, z, triangles=tri.triangles, cmap=plt.cm.CMRmap, linewidths=0.5, antialiased=True)
-            self.matplotlib_widget.canvas.draw()
-            print("READY")
+    def open_datafile(self):
+        filename = time.strftime("%d-%b-%Y_%H-%M-%S") + self.params_man.params["filename"]
+        output_file = os.path.join(self.params_man.params['output_folder'], filename)
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+        datafile_fp = open(output_file, 'w')
+        datafile_fp.write(self.params_man.params["notes"]+"\n")
+        datafile_fp.write("% Mast Angle, Arm Angle, Background RSSI, Transmission RSSI\n")
+        self.datafile = datafile_fp
+        return datafile_fp
+
 
 class ArrowsDialog(QtWidgets.QDialog):
     def __init__(self, parent, motor_conn: MotorConnection, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         uic.loadUi("./gui/arrows_dialog.ui", self)
+        self.motor_conn = motor_conn
 
         if not motor_conn.serial_connection:
             try:
@@ -226,16 +274,33 @@ class ArrowsDialog(QtWidgets.QDialog):
         down_shortcut = QShortcut(QKeySequence('Down'), self)
         right_shortcut = QShortcut(QKeySequence('Right'), self)
 
-        up_shortcut.activated.connect(lambda: self.dir_pressed('up'))
-        left_shortcut.activated.connect(lambda: self.dir_pressed('left'))
-        down_shortcut.activated.connect(lambda: self.dir_pressed('down'))
-        right_shortcut.activated.connect(lambda: self.dir_pressed('right'))
+        shift_up_shortcut = QShortcut(QKeySequence('Shift+Up'), self)
+        shift_left_shortcut = QShortcut(QKeySequence('Shift+Left'), self)
+        shift_down_shortcut = QShortcut(QKeySequence('Shift+Down'), self)
+        shift_right_shortcut = QShortcut(QKeySequence('Shift+Right'), self)
+
+        up_shortcut.activated.connect(lambda: self.dir_pressed('up', 15))
+        left_shortcut.activated.connect(lambda: self.dir_pressed('left', -15))
+        down_shortcut.activated.connect(lambda: self.dir_pressed('down', -15))
+        right_shortcut.activated.connect(lambda: self.dir_pressed('right', 15))
+
+        shift_up_shortcut.activated.connect(lambda: self.dir_pressed('up', 1))
+        shift_left_shortcut.activated.connect(lambda: self.dir_pressed('left', -1))
+        shift_down_shortcut.activated.connect(lambda: self.dir_pressed('down', -1))
+        shift_right_shortcut.activated.connect(lambda: self.dir_pressed('right', 1))
     
     def done(self, result):
         super().done(result)
 
-    def dir_pressed(self, dir):
-        print(f"{dir} pressed")
+    def dir_pressed(self, dir, amount):
+        if dir == 'up':
+            self.motor_conn.send_command("MOVE_ELV_BY", amount)
+        elif dir == 'left':
+            self.motor_conn.send_command("MOVE_AZM_BY", amount)
+        elif dir == 'down':
+            self.motor_conn.send_command("MOVE_ELV_BY", amount)
+        elif dir == 'right':
+            self.motor_conn.send_command("MOVE_AZM_BY", amount)
 
 class ViewParamsDialog(QtWidgets.QDialog):
     def __init__(self, parent, params, *args, **kwargs):

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import serial
-from .codes import STATUS_CODES, RESPONSE_CODES, STATUS_ALIASES, VALID_TYPES
+import asyncio
 import time
+from .codes import STATUS_CODES, RESPONSE_CODES, STATUS_ALIASES, VALID_TYPES
 
 class MotorConnection:
     def __init__(self, port='/dev/ttyACM0', baudrate: int=115200, use_scalars: bool=True, debug: bool=False):
@@ -31,6 +32,28 @@ class MotorConnection:
         """Toggle scalars"""
         self.use_scalars = not self.use_scalars
         return self.use_scalars
+
+    async def wait_async(self, intvl=100):
+        """
+        Wait until MCU is ready for new command
+
+        Parameters
+        ----------
+        intvl: int
+            polling interval in milliseconds
+
+        Returns
+        -------
+        bool
+            True if successful, False if internal error occurred
+        """
+        while True:
+            response = self.send_command('READY')
+            if response['status'] == 'OK':
+                return True
+            elif response['status'] == 'INTL_ERROR':
+                return False
+            await asyncio.sleep(intvl/1000)
 
     def wait(self, intvl=100):
         """
@@ -63,7 +86,7 @@ class MotorConnection:
         self.serial_connection.flush()
 
         # read the response
-        self.serial_connection.timeout = 0.5
+        self.serial_connection.timeout = 0.2
         data = self.serial_connection.read(256)
         response = self.parse_response(data, com[0])
         return response

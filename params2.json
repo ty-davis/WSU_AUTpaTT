@@ -7,14 +7,17 @@
     "mast_steps"       : 181,
     "arm_start_angle"  : 0.0,
     "arm_end_angle"    : 0.0,
-    "arm_steps"        : 1,
+    "arm_steps"        : 3,
     "tx_radio_id"      : "8099c3",
     "rx_radio_id"      : "2197c3",
     "tx_freq_offset"   : 0,
     "rx_freq_offset"   : -7e3,
     "data_port"        : 8888,
-    "usb_port"         : "/dev/ttyACM1",
+    "usb_port"         : "/dev/ttyACM0",
     "baudrate"         : 115200,
     "rx_samples"       : 40000,
-    "stm32_use_scalars": true
+    "stm32_use_scalars": true,
+    "output_folder"    : "test_folder",
+    "stm32_use_scalars": true,
+    "debug_stm32"      : false
 }
