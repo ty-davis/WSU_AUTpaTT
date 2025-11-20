@@ -26,10 +26,16 @@ class MyMainWindow(QtWidgets.QMainWindow):
         # Create timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.poll_position)
-        self.timer.start(100)   # update every 100 ms
+        self.timer.start(150)   # update every 150 ms
 
         # load the parameters
         self.params_man = ParamsManager()
+
+        self.mast_steps.setText(str(self.params_man.params['mast_steps']))
+        self.mast_steps.editingFinished.connect(self.update_params)
+
+        self.arm_steps.setText(str(self.params_man.params['arm_steps']))
+        self.arm_steps.editingFinished.connect(self.update_params)
 
         self.logfile = None
 
@@ -72,19 +78,12 @@ class MyMainWindow(QtWidgets.QMainWindow):
         try:
             self.params_man.params["mast_steps"] = int(self.mast_steps.text())
         except ValueError:
-            pass
+            self.mast_steps.setText(str(self.params_man.params["mast_steps"]))
 
         try:
             self.params_man.params["arm_steps"] = int(self.arm_steps.text())
         except ValueError:
-            pass
-
-    def update_lcd(self):
-        self.motor_conn.serial_connection
-        azm, elv = self.motor_conn.send_command("gp")
-        self.log("UPDATING", azm, elv)
-        self.azimuthLocation.display(azm)
-        self.elevationLocation.display(elv)
+            self.arm_steps.setText(str(self.params_man.params["arm_steps"]))
 
     @qasync.asyncSlot()
     async def poll_position(self):
@@ -130,7 +129,6 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
     @qasync.asyncSlot()
     async def run_test(self):
-        self.update_params()
         scan: AbstractScan = self.select_scan.currentData()
         scan.reset_cancel()
         self.progress_bar.setValue(0)

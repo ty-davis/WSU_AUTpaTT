@@ -2,6 +2,8 @@
 import sys
 import serial
 import asyncio
+from asyncio import Queue
+import traceback
 import time
 from .codes import STATUS_CODES, RESPONSE_CODES, STATUS_ALIASES, VALID_TYPES
 
@@ -12,6 +14,10 @@ class MotorConnection:
         self.use_scalars = use_scalars
         self.print_debug = debug
         self.serial_connection = None
+        self._command_queue = Queue()
+        self._queue_worker_task = None
+        self._response_futures = {}
+        self._command_id = 0
 
     def connect(self):
         """Establish serial connection"""
@@ -22,6 +28,7 @@ class MotorConnection:
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE
         )
+        self._queue_worker_task = asyncio.create_task(self._queue_worker())
 
     def disconnect(self):
         """Close serial connection"""
@@ -32,6 +39,7 @@ class MotorConnection:
         """Toggle scalars"""
         self.use_scalars = not self.use_scalars
         return self.use_scalars
+
 
     async def wait_async(self, intvl=100):
         """
@@ -86,10 +94,30 @@ class MotorConnection:
         self.serial_connection.flush()
 
         # read the response
-        self.serial_connection.timeout = 0.05
+        self.serial_connection.timeout = 0.3
         data = self.serial_connection.read(256)
         response = self.parse_response(data, com[0])
         return response
+
+    async def _queue_worker(self):
+        while True:
+            try:
+                command_id, command, params, future = await self._command_queue.get()
+                try:
+                    com = self.build_command(command, params)
+                    self.serial_connection.write(com)
+                    self.serial_connection.flush()
+                    
+                    self.serial_connection.timeout = 0.3
+                    data = await asyncio.to_thread(self.serial_connection.read, 256)
+                    response = self.parse_response(data, com[0])
+                    future.set_result(response)
+                except Exception as e:
+                    future.set_exception(e)
+                finally:
+                    self._command_queue.task_done()
+            except asyncio.CancelledError:
+                break
 
     async def send_command_async(self, command: str, *params):
         com = self.build_command(command, params)
@@ -97,13 +125,10 @@ class MotorConnection:
         if not self.serial_connection:
             raise Exception("Command could not be sent, initialize serial connection first")
 
-        self.serial_connection.write(com)
-        self.serial_connection.flush()
-
-        self.serial_connection.timeout = 0.05
-        data = await asyncio.to_thread(self.serial_connection.read, 256)
-        response = self.parse_response(data, com[0])
-        return response
+        self._command_id += 1
+        future = asyncio.Future()
+        await self._command_queue.put((self._command_id, command, params, future))
+        return await future
 
     def build_command(self, command: str, params):
         # parse the alias if necessary
