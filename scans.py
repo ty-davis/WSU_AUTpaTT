@@ -85,7 +85,7 @@ class ThreeDPhiCut(AbstractScan):
             self.motor_conn.send_command("MOVE_AZM_BY", -360 * (1 if i % 2 == 0 else -1))
             await self.motor_conn.wait_async(20)
             radio_rx_graph.stop()
-            log("FINISHED COLLECTING AT θ: ", theta)
+            self.log("FINISHED COLLECTING AT θ: ", theta)
             antenna_data = radio_rx_graph.vector_sink_0.data()
 
             n = len(antenna_data)
