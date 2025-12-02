@@ -1,0 +1,4 @@
+../Core/Src/motor_controls.c:16:6:start_motor_movement	16	static
+../Core/Src/motor_controls.c:40:6:dance	8	static
+../Core/Src/motor_controls.c:44:9:move_motor_by	24	static
+../Core/Src/motor_controls.c:63:6:HAL_TIM_PeriodElapsedCallback	24	static

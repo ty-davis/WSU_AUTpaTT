@@ -1,0 +1,6 @@
+../Core/Src/command_parser.c:53:9:hb	16	static
+../Core/Src/command_parser.c:54:9:lb	16	static
+../Core/Src/command_parser.c:57:6:transmit_error	72	static
+../Core/Src/command_parser.c:67:9:motors_busy	8	static
+../Core/Src/command_parser.c:71:9:good_step_value	48	static
+../Core/Src/command_parser.c:80:6:ParseCommand	88	static
