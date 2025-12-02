@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
 import csv
-import argparse
 
 def main():
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', help="Path to the input file")
     parser.add_argument('--plot-layers', action='store_true', help='Plot each line before showing the 3d plot')
