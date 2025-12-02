@@ -1,4 +1,7 @@
 #------------------------------------------------------------------------------
+# THIS FILE IS DEPRECATED AND LEFT HERE FOR LEGACY REASONS
+# THE FILE IS NOT IN USE BY app.py AND IS ONLY HERE FOR REFERENCE
+#
 #'PlotGraph.py'                                     Hearn WSU-ECE
 #                                                   17apr23
 # Open-Source Antenna Pattern Measurement System

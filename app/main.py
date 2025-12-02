@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 #------------------------------------------------------------------------------
+# THIS FILE IS DEPRECATED AND LEFT HERE FOR LEGACY REASONS
+# THE FILE IS NOT IN USE BY app.py AND IS ONLY HERE FOR REFERENCE
+#
 #'main.py'                                          Hearn WSU-ECE
 #                                                   17apr23
 # Open-Source Antenna Pattern Measurement System
