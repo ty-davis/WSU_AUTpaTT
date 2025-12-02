@@ -1,0 +1,33 @@
+\chapter{GUI Installation and Usage}
+
+\section{Environment Setup}
+
+The GUI is implemented in Python using PyQt6. A basic environment setup might be:
+
+\begin{lstlisting}[language=bash]
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install pyqt6 pyqt6-tools numpy matplotlib pyserial
+# Add SDR-related packages as needed
+\end{lstlisting}
+
+\section{Launching the GUI}
+
+From the \texttt{/gui/} directory:
+
+\begin{lstlisting}[language=bash]
+python main.py
+\end{lstlisting}
+
+\section{Main Features}
+
+\begin{itemize}
+  \item Connect/disconnect from the STM32 controller via serial port.
+  \item Manual control of azimuth, and elevation.
+  \item Display of current motor positions.
+  \item Configuration of sweep ranges and resolution.
+  \item Starting and stopping automated measurement runs.
+  \item Visualization of 2D or 3D radiation patterns.
+\end{itemize}
+
+Include screenshots or GUI layout diagrams in the \texttt{/docs/} folder and reference them here.

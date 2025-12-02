@@ -1,0 +1,60 @@
+\chapter{Electronics and Wiring}
+
+\section{Overview}
+
+The electronics subsystem includes the STM32 Nucleo-L010RB board, stepper motor drivers, stepper motors, power supply, and connections to the SDRs and host computer.
+
+\section{Wiring Guidelines}
+
+Use the wiring diagram shown in Fig. \ref{fig:wiring} to connect the components of the system.
+The pins on the STM32 are shown with two labels denoting the pin numbers of the STM32, and the pins
+of the corresponding Arduino header that match and are shown on the board.
+
+\begin{figure}[h!]
+    \footnotesize
+    \begin{centering}
+    \includesvg[width=\textwidth]{figs/wiring}
+    \end{centering}
+    \caption{Wiring Diagram for STM32 and Motor Drivers.}
+    \label{fig:wiring}
+\end{figure}
+
+A +12V power supply is required to power the motor drivers and is omitted here for brevity.
+
+\section{Stepper Motor Drivers}
+
+Each stepper driver (TB6600) connects to:
+\begin{itemize}
+  \item A Stepper Motor
+  \item Power: +12~V and GND.
+  \item Control signals from STM32: PUL, DIR, and ENABLE.
+\end{itemize}
+
+Unless another pulse/revolution ratio is desired and sent to the STM32 via the \hyperref[sec:serial_protocol]{serial protocol},
+set the TB6600 motor drivers to 800 pulse/revolution.
+
+
+\section{STM32 Nucleo Connections}
+
+\begin{itemize}
+  \item USB connection to the host computer for programming and serial communication.
+  \item GPIO pins connected to each driver's PUL(-), DIR(-), and EN(-) pins.
+  \item 5V pin connected to each driver's PUL(+), DIR(+), and EN(+) pins.
+\end{itemize}
+
+\section{SDR Connections}
+
+\begin{itemize}
+  \item The transmit SDR \& receiver SDR connects to the host computer via USB.
+  \item The transmit SDR connects to WIFI band parabolic antenaa.
+  \item The receive SDR connects to the AUT.
+\end{itemize}
+
+\begin{figure}[h!]
+    \footnotesize
+    \begin{centering}
+    \includesvg[width=\textwidth]{figs/wiring_computer}
+    \end{centering}
+    \caption{Wiring Diagram for STM32 and Motor Drivers.}
+    \label{fig:wiring}
+\end{figure}

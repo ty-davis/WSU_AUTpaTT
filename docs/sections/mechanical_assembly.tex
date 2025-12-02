@@ -1,0 +1,55 @@
+\chapter{Mechanical Assembly}
+
+This chapter describes the mechanical assembly of AUTpaTT v3. Detailed drawings and 3D models are provided in the \texttt{/mechanical/} directory of the repository.
+
+\section{Printing and Preparing Parts}
+
+\begin{enumerate}
+  \item Print all STL files using suitable material (e.g., PLA, ABS, or PETG). The original project was printed using ABS plastic.
+  \item Verify interference fit between bearings and housings, verify clearances, clean up any support material or rough edges.
+\end{enumerate}
+
+\section{Base Frame and Azimuth Axis}
+
+\begin{enumerate}
+  \item Assemble the following to the base plate per the assembly drawing.
+    \begin{enumerate}
+
+        \item v2\_nemaMotorMount w/ the azimuth stepper motor installed.
+        \item v2\_baseBearingFixture
+        \item GT2-516-6mm timing belt pully
+    \end{enumerate}
+  \item Assemble the mast bearing into the base bearing fixture and the v2\_mastBaseGear into the bearing. Verify interference fits for both items. Tape can be added to the parts to tighten the fit.
+  \item Assemble the timing belt to the base gear and timing belt on the stepper motor then tighten the belt by sliding the motor mount in the slots and tighten down the motor mount bolts.
+\end{enumerate}
+
+\section{Elevation Axis}
+
+\begin{enumerate}
+  \item Mount the SMA Rotary joint to the v3\_mastYokeArmRight using fasteners.
+  \item Assemble the larger plastic ball bearing (6455K147) into the v3\_AUT\_mounting plate.
+  \item Assemble the other plastic ball bearing (6455K54) into the v3\_mastYokeArmLeft.
+  \item Assemble the right and left arm to the mounting plate as shown in the assembly drawing and press the "dowels" on the arms into the v3\_mastYokeBase.
+  \item Assemble the elevation stepper motor into the v3\_mastYokeMotorMount as shown in the assembly drawing. Do not fully tighten fasteners yet.
+  \item Press the "dowels" of the motor mount into the yoke base with the rotor of the motor facing out per the assembly drawing.
+  \item Assemble the GT2-516-6mm timing belt pully to the stepper motor and the GT2-560-6mm timing belt pully to the mounting plate. Note: the center bore of the GT2-560-6mm pully will need to be drilled out per the drawing to assemble correctly. 
+  \item Assemble the timing belt to both pullies and tighten by sliding the stepper motor down in the mount and tightening the fasteners. 
+  \item Press the tube into the mast yoke and then the tube to the base gear to finalize the mechanical assembly.
+\end{enumerate}
+
+\section{Finishing Assembly}
+
+\begin{enumerate}
+  \item Assemble the AUT to the mounting plate, a small flexible SMA cable will be needed to be assembled from the AUT to the rotary joint. 
+  \item Assemble a longer SMA cable to the other side of the rotary joint and fish it through the side of the tube so it does not get tangled. This cable will go to the "receiving" SDR. 
+  \item Assemble the motor drivers and micro controller to the v3\_STM\_mountingPlate.
+  \item Wire the stepper motors and the independent power supply to the motor drivers and the motor drivers to the micro-controller per the wiring diagram. 
+\end{enumerate}
+
+\section{Mechanical Checks}
+
+\begin{itemize}
+  \item Ensure that all axes rotate freely with no binding.
+  \item Check that cables and wires can be routed without snagging or wrapping around moving parts.
+  \item Tighten all fasteners and recheck alignment.
+\end{itemize}

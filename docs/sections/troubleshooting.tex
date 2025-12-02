@@ -1,0 +1,35 @@
+\chapter{Troubleshooting}
+
+\section{Common Issues}
+
+\subsection{Board Not Detected / USB Problems}
+
+\begin{itemize}
+  \item Check the USB cable; use a known good USB-A to Mini-USB-B cable.
+  \item Some issues (e.g., ``USB LSD'' blinking) may indicate insufficient power or communication errors.
+  \item Try a different USB port or powered hub.
+\end{itemize}
+
+\subsection{Stepper Motors Not Moving or Stalling}
+
+\begin{itemize}
+  \item Verify wiring from drivers to motors and from drivers to STM32.
+  \item Check that the driver is receiving 12~V power.
+  \item Adjust the current limit on the driver; too low can cause missed steps, too high can overheat.
+\end{itemize}
+
+\subsection{No SDR Signal}
+
+\begin{itemize}
+  \item Confirm that the correct SDR device index is selected in the GUI.
+  \item Check frequency, gain, and antenna connections.
+  \item Test the SDR separately with a simple spectrum viewer application.
+\end{itemize}
+
+\section{Debugging Tips}
+
+\begin{itemize}
+  \item Use serial terminal software to send simple commands to the STM32 and observe responses.
+  \item Enable debug prints in the firmware and/or GUI.
+  \item Test one axis at a time before running full 3D sweeps.
+\end{itemize}

@@ -1,0 +1,40 @@
+\chapter{Firmware (STM32)}
+
+\section{Firmware Contents}
+
+The \texttt{/firmware/} directory should contain:
+
+\begin{itemize}
+  \item STM32CubeMX project configuration (if used).
+  \item C source code and header files.
+  \item A precompiled \texttt{.hex} or \texttt{.bin} file for quick flashing.
+\end{itemize}
+
+\section{Toolchain}
+
+\begin{itemize}
+  \item \textbf{STM32CubeProgrammer} for flashing firmware.
+  \item Optional: \textbf{STM32CubeIDE} or other GCC-based toolchain for development.
+\end{itemize}
+
+\section{Flashing Procedure}
+
+\begin{enumerate}
+  \item Connect the STM32 Nucleo-L010RB board to the computer via USB.
+  \item Open STM32CubeProgrammer and select the ST-LINK connection.
+  \item Load the provided \texttt{.hex} file.
+  \item Erase and program the device.
+  \item Reset the board and verify that it enumerates as a serial port.
+\end{enumerate}
+
+\section{Serial Protocol} \label{sec:serial_protocol}
+
+Describe here the basic serial commands used between the GUI and the firmware, for example:
+
+\begin{itemize}
+  \item Command to move to a given Azimuth/Elevation angle.
+  \item Command to home each axis.
+  \item Command to query current motor positions.
+\end{itemize}
+
+This documentation allows others to re-implement the controller if desired.

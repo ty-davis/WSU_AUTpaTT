@@ -1,0 +1,41 @@
+\chapter{Measurement Procedure}
+
+This chapter describes a typical measurement workflow.
+
+\section{Preparation}
+
+\begin{enumerate}
+  \item Verify all mechanical connections and ensure that all axes move freely.
+  \item Power on the system and connect the STM32 and SDRs to the host computer.
+  \item Launch the GUI and connect to the STM32 serial port.
+\end{enumerate}
+
+\section{Homing and Zeroing}
+
+\begin{enumerate}
+  \item Home each axis using the GUI (or manually move to a known reference position).
+  \item Confirm that position readouts match expected zero positions.
+\end{enumerate}
+
+\section{Configuring a Sweep}
+
+\begin{enumerate}
+  \item Set the Azimuth start/stop angles and step size.
+  \item Set the Elevation range (if used) and step size.
+  \item Configure SDR parameters (center frequency, gain, sample rate).
+\end{enumerate}
+
+\section{Running a Measurement}
+
+\begin{enumerate}
+  \item Start the sweep from the GUI.
+  \item Monitor progress and verify that the AUT moves as expected.
+  \item Upon completion, save the measured data (e.g., CSV file).
+\end{enumerate}
+
+\section{Data Visualization}
+
+\begin{itemize}
+  \item Use built-in plotting in the GUI for quick inspection.
+  \item Optionally, export data for use in external tools (MATLAB, Python scripts, etc.).
+\end{itemize}

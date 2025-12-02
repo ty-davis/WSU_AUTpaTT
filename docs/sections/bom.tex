@@ -1,0 +1,62 @@
+\chapter{Bill of Materials (BOM)}
+
+This chapter lists the components required to build AUTpaTT v3. Part numbers and vendors are examples; replace them with the exact parts you select.
+
+\section{COTS items}
+
+\begin{table}[H]
+  \centering
+  \makebox[\textwidth][c]{
+      \begin{tabular}{@{}lll l@{}}
+        \toprule
+        Qty & Item & Part Number & Notes \\
+        \midrule
+        1 & STM32 Nucleo-L010RB dev board & NUCLEO-L010RB & Main controller \\
+        2 & Stepper motor driver & TB6600 & One per axis \\
+        1 & Power supply, 12~V & -- & \SIrange{3}{5}{A} recommended \\
+        1 & USB-A to Mini-USB-B cable & -- & Recommend buying a 10ft cord \\
+        -- & Assorted jumper wires & -- & Female--female and male--female \\
+        2 & Stepper motor & NEMA17 & Azimuth, Elevation \\
+        1 & Transmit Antenna & -- & Parabolic WIFI \\
+        1 & Receive Antenna & -- & This is the AUT\\
+        1 & Plastic Ball Bearing & McMaster-Carr, 6455K147 & --  \\
+        1 & Plastic Ball Bearing & McMaster-Carr, 6455K54 & --\\
+        1 & SMA Rotary Joint & FMRJ1002 & --\\
+        2 & Timing Belt Pully & GT2-516-6mm & --\\
+        1 & Timing Belt Pully & GT2-560-6mm & --\\
+        2 & Hack RF Radios & -- & --\\
+        - & SMA Cables & -- & Female to Female\\
+        \bottomrule
+      \end{tabular}
+  }
+  \caption{Core electronics components.}
+\end{table}
+
+\section{3D Printed Parts}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{@{}lll l@{}}
+    \toprule
+    Qty & Item & Example & Notes \\
+    \midrule
+    1 & v3\_mastYokeArmLeft & -- & --\\
+    1 & v3\_mastYokeArmRight & -- & --\\
+    1 & v3\_mastYokeBase & -- & --\\
+    1 & v3\_mastYokeMotorMount & -- & --\\
+    1 & v3\_AUT\_mountingPlate & -- & --\\
+    1 & v3\_tube & -- & Can be made from plastic tube\\
+    1 & v2\_mastBaseGear & -- & --\\
+    1 & v2\_baseBearingFixture & -- & --\\
+    1 & v2\_nemaMotorMount & -- & --\\
+    \bottomrule
+  \end{tabular}
+  \caption{Printed Compoenents.}
+\end{table}
+
+\section{Mechanical Structure}
+
+\begin{itemize}
+  \item 3D-printed parts: all STL files in \texttt{/mechanical/} folder.
+  \item Mechanical Assembly described in assembly drawing.
+\end{itemize}
