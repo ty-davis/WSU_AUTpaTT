@@ -19,7 +19,7 @@ class MotorConnection:
         self._response_futures = {}
         self._command_id = 0
 
-    def connect(self):
+    async def connect_async(self):
         """Establish serial connection"""
         self.serial_connection = serial.Serial(
             port=self.port,
@@ -29,6 +29,15 @@ class MotorConnection:
             stopbits=serial.STOPBITS_ONE
         )
         self._queue_worker_task = asyncio.create_task(self._queue_worker())
+
+    def connect(self):
+        self.serial_connection = serial.Serial(
+            port=self.port,
+            baudrate=self.baudrate,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE
+        )
 
     def disconnect(self):
         """Close serial connection"""
@@ -107,7 +116,7 @@ class MotorConnection:
                     com = self.build_command(command, params)
                     self.serial_connection.write(com)
                     self.serial_connection.flush()
-                    
+
                     self.serial_connection.timeout = 0.3
                     data = await asyncio.to_thread(self.serial_connection.read, 256)
                     response = self.parse_response(data, com[0])
@@ -290,6 +299,8 @@ class MotorConnection:
                     self.disconnect()
                     print("Exiting...")
                     break
+                elif user_in == '':
+                    continue
                 elif user_in in CUSTOM_COMMANDS.keys():
                     CUSTOM_COMMANDS[user_in]()
                     continue

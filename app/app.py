@@ -41,7 +41,6 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         # configure the motor connection
         self.motor_conn = None
-        self.connect_to_stm32()
 
         # self.timer = QTimer()
         # self.timer.timeout.connect(self.poll_position)
@@ -73,7 +72,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         for scan in all_scans:
             self.select_scan.addItem(scan.name, scan)
-    
+
     def update_params(self):
         try:
             self.params_man.params["mast_steps"] = int(self.mast_steps.text())
@@ -100,6 +99,10 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
     def edit_parameters(self):
         ...
+
+    @qasync.asyncSlot()
+    async def initialize_stm32_connection(self):
+        await self.connect_to_stm32()
 
     def move_motor_by(self, dir):
         if self.motor_conn.serial_connection:
@@ -171,7 +174,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.cancel_button.hide()
         self.start_button.show()
 
-    def connect_to_stm32(self):
+    async def connect_to_stm32(self):
         self.motor_conn = MotorConnection(
             port=self.params_man.params['usb_port'],
             baudrate=self.params_man.params['baudrate'],
@@ -179,7 +182,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
             debug=self.params_man.params['debug_stm32'],
         )
         try:
-            self.motor_conn.connect()
+            await self.motor_conn.connect_async()
         except SerialException as e:
             print(f"Error connecting to stm32: {e}")
 
@@ -291,7 +294,7 @@ class ArrowsDialog(QtWidgets.QDialog):
         shift_left_shortcut.activated.connect(lambda: self.dir_pressed('left', -1))
         shift_down_shortcut.activated.connect(lambda: self.dir_pressed('down', -1))
         shift_right_shortcut.activated.connect(lambda: self.dir_pressed('right', 1))
-    
+
     def done(self, result):
         super().done(result)
 
@@ -321,6 +324,8 @@ if __name__ == '__main__':
 
     window = MyMainWindow()
     window.show()
+
+    asyncio.create_task(window.initialize_stm32_connection())
     with loop:
         loop.run_forever()
     # sys.exit(app.exec())
