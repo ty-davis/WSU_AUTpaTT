@@ -100,10 +100,6 @@ class MyMainWindow(QtWidgets.QMainWindow):
     def edit_parameters(self):
         ...
 
-    @qasync.asyncSlot()
-    async def initialize_stm32_connection(self):
-        await self.connect_to_stm32()
-
     def move_motor_by(self, dir):
         if self.motor_conn.serial_connection:
             if dir == 'azm':
@@ -174,7 +170,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.cancel_button.hide()
         self.start_button.show()
 
-    async def connect_to_stm32(self):
+    def connect_to_stm32(self):
         self.motor_conn = MotorConnection(
             port=self.params_man.params['usb_port'],
             baudrate=self.params_man.params['baudrate'],
@@ -182,7 +178,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
             debug=self.params_man.params['debug_stm32'],
         )
         try:
-            await self.motor_conn.connect_async()
+            self.motor_conn.connect()
         except SerialException as e:
             print(f"Error connecting to stm32: {e}")
 
@@ -324,8 +320,6 @@ if __name__ == '__main__':
 
     window = MyMainWindow()
     window.show()
-
-    asyncio.create_task(window.initialize_stm32_connection())
     with loop:
         loop.run_forever()
     # sys.exit(app.exec())
