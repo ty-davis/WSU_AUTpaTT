@@ -72,8 +72,13 @@ class ThreeDPhiCut(AbstractScan):
         theta_angles = np.linspace(theta_start, theta_end, theta_steps)
         theta_step = theta_angles[1] - theta_angles[0] if len(theta_angles) > 1 else 0
 
+        phi_start_pos = self.params['mast_start_angle']
+        phi_end_pos = self.params['mast_end_angle']
         phi_steps = self.params['mast_steps']
-        phi_angles = np.linspace(0, 360, phi_steps)
+        self.log("Moving to start position")
+        await self.motor_conn.send_command_async("MOVE_AZM_TO", phi_start_pos)
+        await self.motor_conn.send_command_async("MOVE_ELV_TO", theta_start)
+        await self.motor_conn.wait_async(20)
 
         self.log(f"STARTING SCAN: {self.name}")
         radio_tx_graph.start()
@@ -82,12 +87,11 @@ class ThreeDPhiCut(AbstractScan):
         data = np.array([])
         for i, theta in enumerate(theta_angles):
             self.progress_bar.setValue(round(i / theta_steps * 100))
-            if i != 0:
-                await self.motor_conn.send_command_async("MOVE_ELV_BY", theta_step)
-                await self.motor_conn.wait_async(20)
+            await self.motor_conn.send_command_async("MOVE_ELV_TO", theta)
+            await self.motor_conn.wait_async(20)
             self.log("COLLECTING DATA AT θ: ", theta)
             radio_rx_graph.start()
-            await self.motor_conn.send_command_async("MOVE_AZM_BY", -360 * (1 if i % 2 == 0 else -1))
+            await self.motor_conn.send_command_async("MOVE_AZM_TO", phi_end_pos if i % 2 == 0 else phi_start_pos)
             await self.motor_conn.wait_async(20)
             radio_rx_graph.stop()
             self.log("FINISHED COLLECTING AT θ: ", theta)
@@ -98,15 +102,17 @@ class ThreeDPhiCut(AbstractScan):
             num_samples = phi_steps
             bin_size = n //num_samples
             avg = np.zeros(num_samples)
-            for i in range(num_samples):
-                avg[i] = np.sqrt(
-                    np.square(antenna_data[i*bin_size:(i+1)*bin_size])
+            for j in range(num_samples):
+                avg[j] = np.sqrt(
+                    np.square(antenna_data[j*bin_size:(j+1)*bin_size])
                       .sum()/bin_size
                 )
 
-            phi_angles_corrected = np.array(reversed(list(phi_angles))) if i % 2 == 0 else phi_angles
-            background_rssi = np.zeros(len(avg))
-            theta_row = np.array([theta for _ in phi_angles])
+            phi_angles = np.linspace(phi_start_pos, phi_end_pos, phi_steps)
+            reverse_phi = i % 2 == 1
+            phi_angles_corrected = phi_angles[::-1] if reverse_phi else phi_angles
+            background_rssi = np.zeros(phi_steps)
+            theta_row = np.full(phi_steps, theta)
             cut_data = np.column_stack((phi_angles_corrected, theta_row, background_rssi, avg))
             if not data.size:
                 data = cut_data.copy()
@@ -173,6 +179,8 @@ class ThreeDThetaCut(AbstractScan):
         data = np.array([])
         for i, phi in enumerate(phi_angles):
             self.progress_bar.setValue(round(i / phi_steps * 100))
+            await self.motor_conn.send_command_async("MOVE_AZM_TO", phi)
+            await self.motor_conn.wait_async(20)
             self.log(f"Collecting scan at φ: {phi}")
             radio_rx_graph.start()
             await self.motor_conn.send_command_async("MOVE_ELV_BY", 360)
