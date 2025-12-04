@@ -14,8 +14,11 @@ extern TIM_HandleTypeDef htim21;
 extern TIM_HandleTypeDef htim22;
 
 void start_motor_movement(MotorState *motor_state) {
+	if (motor_state->motor_count == 0) {
+		return;
+	}
 	// set the direction pin
-	if (motor_state->motor_direction == 0) {
+	if (motor_state->motor_direction == 1) {
 		if (motor_state == &azm_motor_state) {
 			HAL_GPIO_WritePin(AZM_DIR_PORT, AZM_DIR_PIN, GPIO_PIN_RESET);
 		} else if (motor_state == &elv_motor_state) {
