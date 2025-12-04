@@ -233,42 +233,42 @@ VALID_TYPES = {
     # integers
     'uint8_t': {
         'len': 1,
-        'build_val_func': lambda x: unsigned_int(x, 8),
-        'parse_val_func': lambda x: parse_uint(x, 8),
+        'build_val_func': lambda msg: unsigned_int(msg, 8),
+        'parse_val_func': lambda msg: parse_uint(msg, 8),
     },
     'int8_t': {
         'len': 1,
-        'build_val_func': lambda x: signed_int(x, 8),
-        'parse_val_func': lambda x: parse_int(x, 8),
+        'build_val_func': lambda msg: signed_int(msg, 8),
+        'parse_val_func': lambda msg: parse_int(msg, 8),
     },
     'uint16_t': {
         'len': 2,
-        'build_val_func': lambda x: unsigned_int(x, 16),
-        'parse_val_func': lambda x: parse_uint(x, 16),
+        'build_val_func': lambda msg: unsigned_int(msg, 16),
+        'parse_val_func': lambda msg: parse_uint(msg, 16),
     },
     'int16_t': {
         'len': 2,
-        'build_val_func': lambda x: signed_int(x, 16),
-        'parse_val_func': lambda x: parse_int(x, 16),
+        'build_val_func': lambda msg: signed_int(msg, 16),
+        'parse_val_func': lambda msg: parse_int(msg, 16),
     },
     'uint32_t': {
         'len': 4,
-        'build_val_func': lambda x: unsigned_int(x, 32),
-        'parse_val_func': lambda x: parse_uint(x, 32),
+        'build_val_func': lambda msg: unsigned_int(msg, 32),
+        'parse_val_func': lambda msg: parse_uint(msg, 32),
     },
     'int32_t': {
         'len': 4,
-        'build_val_func': lambda x: signed_int(x, 32),
-        'parse_val_func': lambda x: parse_int(x, 32),
+        'build_val_func': lambda msg: signed_int(msg, 32),
+        'parse_val_func': lambda msg: parse_int(msg, 32),
     },
     'uint64_t': {
         'len': 8,
-        'build_val_func': lambda x: unsigned_int(x, 64),
-        'parse_val_func': lambda x: parse_uint(x, 64),
+        'build_val_func': lambda msg: unsigned_int(msg, 64),
+        'parse_val_func': lambda msg: parse_uint(msg, 64),
     },
     'int64_t': {
         'len': 8,
-        'build_val_func': lambda x: signed_int(x, 64),
-        'parse_val_func': lambda x: parse_int(x, 64),
+        'build_val_func': lambda msg: signed_int(msg, 64),
+        'parse_val_func': lambda msg: parse_int(msg, 64),
     },
 }

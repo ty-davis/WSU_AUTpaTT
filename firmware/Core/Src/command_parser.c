@@ -120,6 +120,10 @@ void ParseCommand(uint8_t *message, uint8_t length) {
 		case GET_ELV_TOOTH:
 		case GET_AZM_STEP:
 		case GET_ELV_STEP:
+		case MOVE_AZM_BY:
+		case MOVE_ELV_BY:
+		case MOVE_AZM_TO:
+		case MOVE_ELV_TO:
 			break;
 		default:
 			if (motors_busy()) {
@@ -160,21 +164,41 @@ void ParseCommand(uint8_t *message, uint8_t length) {
 			response_len = 6;
 			break;
 		case MOVE_AZM_BY:
+			if (azm_motor_state.motor_count) {
+				response[0] = BUSY;
+				response_len = 1;
+				break;
+			}
 			move_motor_by(uint_from_arr(&message[3], 4), &azm_motor_state);
 			response[0] = OK;
 			response_len = 1;
 			break;
 		case MOVE_ELV_BY:
+			if (elv_motor_state.motor_count) {
+				response[0] = BUSY;
+				response_len = 1;
+				break;
+			}
 			move_motor_by(uint_from_arr(&message[3], 4), &elv_motor_state);
 			response[0] = OK;
 			response_len = 1;
 			break;
 		case MOVE_AZM_TO:
+			if (azm_motor_state.motor_count) {
+				response[0] = BUSY;
+				response_len = 1;
+				break;
+			}
 			move_motor_to(uint_from_arr(&message[3], 4), &azm_motor_state);
 			response[0] = OK;
 			response_len = 1;
 			break;
 		case MOVE_ELV_TO:
+			if (elv_motor_state.motor_count) {
+				response[0] = BUSY;
+				response_len = 1;
+				break;
+			}
 			move_motor_to(uint_from_arr(&message[3], 4), &elv_motor_state);
 			response[0] = OK;
 			response_len = 1;

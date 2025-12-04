@@ -25,7 +25,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         # Create timer
         self.timer = QTimer()
-        self.timer.timeout.connect(self.poll_position)
+        self.timer.timeout.connect(self.poll_state)
         self.timer.start(100)   # update every 150 ms
 
         # load the parameters
@@ -90,7 +90,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
             self.arm_steps.setText(str(self.params_man.params["arm_steps"]))
 
     @qasync.asyncSlot()
-    async def poll_position(self):
+    async def poll_state(self):
         if not self.motor_conn or not self.motor_conn.serial_connection:
             return
         result = await self.motor_conn.send_command_async("GET_STATE")
@@ -105,6 +105,13 @@ class MyMainWindow(QtWidgets.QMainWindow):
             self.lockUnlockButton.setText('Unlock Motors')
         else:
             self.lockUnlockButton.setText('Lock Motors')
+        self.start_button.setEnabled(locked)
+        self.moveAzimuthByButton.setEnabled(locked)
+        self.moveElevationByButton.setEnabled(locked)
+        self.moveAzimuthToButton.setEnabled(locked)
+        self.moveElevationToButton.setEnabled(locked)
+        self.calibrateButton.setEnabled(locked)
+        self.move_with_arrows_button.setEnabled(locked)
 
     def edit_parameters(self):
         ...
