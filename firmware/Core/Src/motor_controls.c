@@ -41,8 +41,25 @@ void dance() {
 
 }
 
-uint8_t move_motor_by(int16_t degrees, MotorState *motor_state) {
-	int16_t l_degrees = degrees;
+void set_motor_enable(MotorState *motor_state, uint8_t set) {
+	motor_state->motor_enable = set;
+	if (set) {
+		if (motor_state == &azm_motor_state) {
+			HAL_GPIO_WritePin(AZM_EN_PORT, AZM_EN_PIN, GPIO_PIN_SET);
+		} else if (motor_state == &elv_motor_state) {
+			HAL_GPIO_WritePin(ELV_EN_PORT, ELV_EN_PIN, GPIO_PIN_SET);
+		}
+	} else {
+		if (motor_state == &azm_motor_state) {
+			HAL_GPIO_WritePin(AZM_EN_PORT, AZM_EN_PIN, GPIO_PIN_RESET);
+		} else if (motor_state == &elv_motor_state) {
+			HAL_GPIO_WritePin(ELV_EN_PORT, ELV_EN_PIN, GPIO_PIN_RESET);
+		}
+	}
+}
+
+uint8_t move_motor_by(int32_t degrees, MotorState *motor_state) {
+	int32_t l_degrees = degrees;
 	if (l_degrees < 0) {
 		l_degrees *= -1;
 		motor_state->motor_direction = 1;
@@ -50,12 +67,38 @@ uint8_t move_motor_by(int16_t degrees, MotorState *motor_state) {
 		motor_state->motor_direction = 0;
 	}
 
-	uint32_t count_calc = l_degrees * motor_state->tooth_ratio;
+	uint64_t count_calc = l_degrees * motor_state->tooth_ratio;
 	count_calc /= 360;
 	count_calc *= motor_state->motor_pulse_rev;
 	count_calc /= 100000;
-	motor_state->motor_count = count_calc;
+	motor_state->motor_count = (uint32_t)count_calc;
 
+	start_motor_movement(motor_state);
+	return 0;
+}
+
+uint8_t move_motor_to(int32_t degrees, MotorState *motor_state) {
+	// find the target motor_state->motor_position
+	int64_t count_calc = degrees;
+	count_calc *= motor_state->tooth_ratio;
+	count_calc /= 360;
+	count_calc *= 6400;
+	count_calc /= 100000;
+	// count_calc now stores the target motor_state->motor_position
+
+	// get the difference between where it needs to be and where it is
+	count_calc = count_calc - motor_state->motor_position;
+	count_calc *= motor_state->motor_pulse_rev;
+	count_calc /= 6400;
+	// count_calc now knows how many steps to get to its destination
+
+	if (count_calc < 0) {
+		count_calc *= -1;
+		motor_state->motor_direction = 1;
+	} else {
+		motor_state->motor_direction = 0;
+	}
+	motor_state->motor_count = (uint32_t)count_calc;
 	start_motor_movement(motor_state);
 	return 0;
 }

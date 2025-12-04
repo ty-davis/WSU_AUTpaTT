@@ -43,6 +43,29 @@ class MotorConnection:
         """Close serial connection"""
         if self.serial_connection:
             self.serial_connection.close()
+            self.serial_connection = None
+
+    async def disconnect_async(self):
+        """Close serial connection and cleanup async resources"""
+        # Cancel the queue worker task
+        if self._queue_worker_task:
+            self._queue_worker_task.cancel()
+            try:
+                await self._queue_worker_task
+            except asyncio.CancelledError:
+                pass
+            self._queue_worker_task = None
+
+        # Clear any pending futures with an exception
+        for future in self._response_futures.values():
+            if not future.done():
+                future.set_exception(Exception("Connection closed"))
+        self._response_futures.clear()
+
+        # Close the serial connection
+        if self.serial_connection:
+            self.serial_connection.close()
+            self.serial_connection = None
 
     def toggle_scalars(self):
         """Toggle scalars"""
@@ -103,7 +126,7 @@ class MotorConnection:
         self.serial_connection.flush()
 
         # read the response
-        self.serial_connection.timeout = 0.3
+        self.serial_connection.timeout = 0.2
         data = self.serial_connection.read(256)
         response = self.parse_response(data, com[0])
         return response
@@ -117,7 +140,7 @@ class MotorConnection:
                     self.serial_connection.write(com)
                     self.serial_connection.flush()
 
-                    self.serial_connection.timeout = 0.3
+                    self.serial_connection.timeout = 0.02
                     data = await asyncio.to_thread(self.serial_connection.read, 256)
                     response = self.parse_response(data, com[0])
                     future.set_result(response)

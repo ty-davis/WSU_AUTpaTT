@@ -1,14 +1,14 @@
 from .utils import *
 
 STATUS_CODES = {
-    "GET_POSITION":  {
+    "GET_STATE":  {
         "code": 0x10,
-        "alias": 'gp',
+        "alias": 'gs',
         "params": [],
         "scalar": None,
-        "response_params": ['int32_t', 'int32_t'],
+        "response_params": ['int16_t', 'int16_t', 'uint8_t'],
         "response_scalar": [10, 10],
-        "response_names": ['azm', 'elv']
+        "response_names": ['azm', 'elv', 'locked']
     },
     "MOVE_AZM_BY":  {
         "code": 0x11,
@@ -57,7 +57,7 @@ STATUS_CODES = {
     },
     "GET_SPEED":  {
         "code": 0x20,
-        "alias": 'gs',
+        "alias": 'gsp',
         "params": [],
         "scalar": None,
         "response_params": ['uint16_t', 'uint16_t'],

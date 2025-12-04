@@ -26,7 +26,7 @@ class MyMainWindow(QtWidgets.QMainWindow):
         # Create timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.poll_position)
-        self.timer.start(150)   # update every 150 ms
+        self.timer.start(100)   # update every 150 ms
 
         # load the parameters
         self.params_man = ParamsManager()
@@ -41,6 +41,8 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         # configure the motor connection
         self.motor_conn = None
+        # self.connect_to_stm32()
+        self.update_motor_connection_state()
 
         # self.timer = QTimer()
         # self.timer.timeout.connect(self.poll_position)
@@ -61,12 +63,15 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         self.start_button.clicked.connect(self.run_test)
         self.cancel_button.clicked.connect(self.cancel_test)
-        self.moveAzimuthByButton.clicked.connect(lambda: self.move_motor_by('azm'))
-        self.moveElevationByButton.clicked.connect(lambda: self.move_motor_by('elv'))
-        self.moveAzimuthToButton.clicked.connect(lambda: self.move_motor_by('azm_to'))
-        self.moveElevationToButton.clicked.connect(lambda: self.move_motor_by('elv_to'))
-        self.calibrateButton.clicked.connect(lambda: self.move_motor_by('calibrate'))
-        self.lockUnlockButton.clicked.connect(lambda: self.move_motor_by('toggle_lock'))
+        self.moveAzimuthByButton.clicked.connect(lambda: self.motor_command('azm'))
+        self.moveElevationByButton.clicked.connect(lambda: self.motor_command('elv'))
+        self.moveAzimuthToButton.clicked.connect(lambda: self.motor_command('azm_to'))
+        self.moveElevationToButton.clicked.connect(lambda: self.motor_command('elv_to'))
+        self.calibrateButton.clicked.connect(lambda: self.motor_command('calibrate'))
+        self.lockUnlockButton.clicked.connect(lambda: self.motor_command('toggle_lock'))
+
+        self.connect_to_stm32_button.clicked.connect(self.connect_to_stm32)
+        self.disconnect_from_stm32_button.clicked.connect(self.disconnect_from_stm32)
 
         self.cancel_button.hide()
 
@@ -86,41 +91,68 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
     @qasync.asyncSlot()
     async def poll_position(self):
-        assert self.motor_conn
-        if not self.motor_conn.serial_connection:
+        if not self.motor_conn or not self.motor_conn.serial_connection:
             return
-        result = await self.motor_conn.send_command_async("GET_POSITION")
+        result = await self.motor_conn.send_command_async("GET_STATE")
         azm = int(result['azm']) / 8
-        azm_degrees = azm * 10000 / self.params_man.params['azm_pulse_rev'] * 360 / self.params_man.params['azm_tooth_ratio']
+        azm_degrees = azm * 10000 / self.params_man.params['azm_pulse_rev'] * 360 / self.params_man.params['azm_tooth_ratio'] / 10
         elv = int(result['elv']) / 8
-        elv_degrees = elv * 10000 / self.params_man.params['elv_pulse_rev'] * 360 / self.params_man.params['elv_tooth_ratio']
+        elv_degrees = elv * 10000 / self.params_man.params['elv_pulse_rev'] * 360 / self.params_man.params['elv_tooth_ratio'] / 10
+        locked = bool(result['locked'])
         self.azimuthLocation.display(round(azm_degrees))
         self.elevationLocation.display(round(elv_degrees))
+        if locked:
+            self.lockUnlockButton.setText('Unlock Motors')
+        else:
+            self.lockUnlockButton.setText('Lock Motors')
 
     def edit_parameters(self):
         ...
 
-    def move_motor_by(self, dir):
-        if self.motor_conn.serial_connection:
-            if dir == 'azm':
-                amount = int(self.moveAzimuthByValue.text())
-                self.motor_conn.send_command("ma", amount)
-            elif dir == 'elv':
-                amount = int(self.moveElevationByValue.text())
-                self.motor_conn.send_command("me", amount)
-            elif dir == 'azm_to':
-                amount = int(self.moveAzimuthToValue.text())
-                self.motor_conn.send_command("mat", amount)
-            elif dir == 'elv_to':
-                amount = int(self.moveElevationToValue.text())
-                self.motor_conn.send_command("met", amount)
-            elif dir == 'calibrate':
-                self.motor_conn.send_command("c")
-            elif dir == 'toggle_lock':
-                self.motor_conn.send_command("tl")
+    @qasync.asyncSlot()
+    async def motor_command(self, dir):
+        if self.motor_conn and self.motor_conn.serial_connection:
+            try:
+                if dir == 'azm':
+                    amount = int(self.moveAzimuthByValue.text())
+                    await self.motor_conn.send_command_async("ma", amount)
+                elif dir == 'elv':
+                    amount = int(self.moveElevationByValue.text())
+                    await self.motor_conn.send_command_async("me", amount)
+                elif dir == 'azm_to':
+                    amount = int(self.moveAzimuthToValue.text())
+                    await self.motor_conn.send_command("mat", amount)
+                elif dir == 'elv_to':
+                    amount = int(self.moveElevationToValue.text())
+                    await self.motor_conn.send_command_async("met", amount)
+                elif dir == 'calibrate':
+                    await self.motor_conn.send_command_async("c")
+                elif dir == 'toggle_lock':
+                    await self.motor_conn.send_command_async("tl")
+            except SerialException as e:
+                self.log(f"Motor communication error: {e}")
+                self.update_motor_connection_state()
         else:
             print("error connecting to motors")
 
+    def update_motor_connection_state(self):
+        is_connected = bool(self.motor_conn is not None and self.motor_conn.serial_connection)
+
+        # enable/disable buttons according to the connection state
+        self.start_button.setEnabled(is_connected)
+        self.moveAzimuthByButton.setEnabled(is_connected)
+        self.moveElevationByButton.setEnabled(is_connected)
+        self.moveAzimuthToButton.setEnabled(is_connected)
+        self.moveElevationToButton.setEnabled(is_connected)
+        self.calibrateButton.setEnabled(is_connected)
+        self.lockUnlockButton.setEnabled(is_connected)
+        self.move_with_arrows_button.setEnabled(is_connected)
+        if is_connected:
+            self.connect_to_stm32_button.hide()
+            self.disconnect_from_stm32_button.show()
+        else:
+            self.connect_to_stm32_button.show()
+            self.disconnect_from_stm32_button.hide()
 
     def log(self, *args):
         self.status_label.setText(' '.join([str(arg) for arg in args]))
@@ -162,7 +194,6 @@ class MyMainWindow(QtWidgets.QMainWindow):
 
         return results
 
-
     def cancel_test(self):
         scan = self.select_scan.currentData()
         scan.cancel()
@@ -170,7 +201,8 @@ class MyMainWindow(QtWidgets.QMainWindow):
         self.cancel_button.hide()
         self.start_button.show()
 
-    def connect_to_stm32(self):
+    @qasync.asyncSlot()
+    async def connect_to_stm32(self):
         self.motor_conn = MotorConnection(
             port=self.params_man.params['usb_port'],
             baudrate=self.params_man.params['baudrate'],
@@ -178,9 +210,18 @@ class MyMainWindow(QtWidgets.QMainWindow):
             debug=self.params_man.params['debug_stm32'],
         )
         try:
-            self.motor_conn.connect()
+            await self.motor_conn.connect_async()
+            self.update_motor_connection_state()
         except SerialException as e:
             print(f"Error connecting to stm32: {e}")
+
+    @qasync.asyncSlot()
+    async def disconnect_from_stm32(self):
+        if self.motor_conn and self.motor_conn.serial_connection:
+            await self.motor_conn.disconnect_async()
+        if self.motor_conn:
+            self.motor_conn = None
+        self.update_motor_connection_state()
 
     def load_parameters(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -294,15 +335,16 @@ class ArrowsDialog(QtWidgets.QDialog):
     def done(self, result):
         super().done(result)
 
-    def dir_pressed(self, dir, amount):
+    @qasync.asyncSlot()
+    async def dir_pressed(self, dir, amount):
         if dir == 'up':
-            self.motor_conn.send_command("MOVE_ELV_BY", amount)
+            await self.motor_conn.send_command_async("MOVE_ELV_BY", amount)
         elif dir == 'left':
-            self.motor_conn.send_command("MOVE_AZM_BY", amount)
+            await self.motor_conn.send_command_async("MOVE_AZM_BY", amount)
         elif dir == 'down':
-            self.motor_conn.send_command("MOVE_ELV_BY", amount)
+            await self.motor_conn.send_command_async("MOVE_ELV_BY", amount)
         elif dir == 'right':
-            self.motor_conn.send_command("MOVE_AZM_BY", amount)
+            await self.motor_conn.send_command_async("MOVE_AZM_BY", amount)
 
 class ViewParamsDialog(QtWidgets.QDialog):
     def __init__(self, parent, params, *args, **kwargs):

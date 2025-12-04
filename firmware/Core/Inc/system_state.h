@@ -15,7 +15,7 @@ extern TIM_HandleTypeDef htim22;
 
 typedef struct {
 	uint8_t motor_enable;      // 0 = off; 1 = on
-	uint16_t motor_count;      // number of steps until destination reached, this drives the motor speed
+	uint32_t motor_count;      // number of steps until destination reached
 	uint8_t motor_direction;   // 0 = cw;  1 = ccw
 	uint16_t motor_pulse_rev;  // selected step ratio on TB6600 driver
 	uint16_t tooth_ratio;      // driven gear / driving gear, integer is scaled by 1000, e.g. 1200 represents 1.2:1 ratio

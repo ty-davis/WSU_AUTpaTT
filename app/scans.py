@@ -4,6 +4,7 @@ from typing import List, Tuple, Dict, Callable
 import asyncio
 from serial.serialutil import SerialException
 import numpy as np
+import qasync
 import TxRadio
 import RxRadio
 
@@ -46,6 +47,7 @@ class ThreeDPhiCut(AbstractScan):
         self.name = "3D φ-cut Fast Scan"
         self.instructions = """Transmit Antenna polarity should be vertical. Set AUT to φ = 90 and θ = 0"""
 
+    @qasync.asyncSlot()
     async def run_procedure(self):
         if not self.motor_conn.serial_connection:
             try:
@@ -81,11 +83,11 @@ class ThreeDPhiCut(AbstractScan):
         for i, theta in enumerate(theta_angles):
             self.progress_bar.setValue(round(i / theta_steps * 100))
             if i != 0:
-                self.motor_conn.send_command("MOVE_ELV_BY", theta_step)
+                await self.motor_conn.send_command_async("MOVE_ELV_BY", theta_step)
                 await self.motor_conn.wait_async(20)
             self.log("COLLECTING DATA AT θ: ", theta)
             radio_rx_graph.start()
-            self.motor_conn.send_command("MOVE_AZM_BY", -360 * (1 if i % 2 == 0 else -1))
+            await self.motor_conn.send_command_async("MOVE_AZM_BY", -360 * (1 if i % 2 == 0 else -1))
             await self.motor_conn.wait_async(20)
             radio_rx_graph.stop()
             self.log("FINISHED COLLECTING AT θ: ", theta)
@@ -199,14 +201,14 @@ class ThetaScan(AbstractScan):
         await asyncio.sleep(3)
         self.log("Collecting data...")
         radio_rx_graph.start()
-        self.motor_conn.send_command('MOVE_ELV_BY', 360)
+        await self.motor_conn.send_command_async('MOVE_ELV_BY', 360)
         await self.motor_conn.wait_async(20)
         radio_rx_graph.stop()
         self.log("Collection complete")
         self.progress_bar.setValue(100)
         radio_tx_graph.stop()
         await asyncio.sleep(1)
-        
+
         antenna_data = radio_rx_graph.vector_sink_0.data()
         n = len(antenna_data)
         self.log(f"Read {n} data points")
