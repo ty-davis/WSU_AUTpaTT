@@ -1,7 +1,0 @@
-Status,SYMBOL,Description
-10,OK_PAYLOAD,Okay with payload
-20,OK,Okay
-30,BUSY,Busy
-40,BAD_REQUEST,Bad request
-41,BAD_STEP_VAL,Bad microstep value provided
-50,INTL_ERROR,Internal Error
