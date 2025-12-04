@@ -114,17 +114,21 @@ class MyMainWindow(QtWidgets.QMainWindow):
         if self.motor_conn and self.motor_conn.serial_connection:
             try:
                 if dir == 'azm':
-                    amount = int(self.moveAzimuthByValue.text())
-                    await self.motor_conn.send_command_async("ma", amount)
+                    if self.moveAzimuthByValue.text():
+                        amount = int(self.moveAzimuthByValue.text())
+                        await self.motor_conn.send_command_async("ma", amount)
                 elif dir == 'elv':
-                    amount = int(self.moveElevationByValue.text())
-                    await self.motor_conn.send_command_async("me", amount)
+                    if self.moveElevationByValue.text():
+                        amount = int(self.moveElevationByValue.text())
+                        await self.motor_conn.send_command_async("me", amount)
                 elif dir == 'azm_to':
-                    amount = int(self.moveAzimuthToValue.text())
-                    await self.motor_conn.send_command("mat", amount)
+                    if self.moveAzimuthToValue.text():
+                        amount = int(self.moveAzimuthToValue.text())
+                        await self.motor_conn.send_command_async("mat", amount)
                 elif dir == 'elv_to':
-                    amount = int(self.moveElevationToValue.text())
-                    await self.motor_conn.send_command_async("met", amount)
+                    if self.moveElevationToValue.text():
+                        amount = int(self.moveElevationToValue.text())
+                        await self.motor_conn.send_command_async("met", amount)
                 elif dir == 'calibrate':
                     await self.motor_conn.send_command_async("c")
                 elif dir == 'toggle_lock':
