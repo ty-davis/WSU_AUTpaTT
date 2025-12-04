@@ -60,6 +60,12 @@ uint32_t uint_from_arr(uint8_t *arr, uint32_t num_bytes) {
 	return result;
 }
 
+void uint_to_arr(uint8_t *dest, uint32_t val, uint8_t size) {
+	for (int i=0; i<size; i++) {
+		dest[i] = val >> (size - i - 1) * 8;
+	}
+}
+
 
 void transmit_error(uint8_t error) {
 	uint8_t response[50];
@@ -156,12 +162,14 @@ void ParseCommand(uint8_t *message, uint8_t length) {
 			break;
 		case GET_STATE:
 			response[0] = OK_PAYLOAD;
-			response[1] = hb(azm_motor_state.motor_position);
-			response[2] = lb(azm_motor_state.motor_position);
-			response[3] = hb(elv_motor_state.motor_position);
-			response[4] = lb(elv_motor_state.motor_position);
-			response[5] = (uint8_t)(azm_motor_state.motor_enable | elv_motor_state.motor_enable);
-			response_len = 6;
+			uint_to_arr(&response[1], azm_motor_state.motor_position, 4);
+			uint_to_arr(&response[5], elv_motor_state.motor_position, 4);
+//			response[1] = hb(azm_motor_state.motor_position); // we need to pass all four of these suckers
+//			response[2] = lb(azm_motor_state.motor_position);
+//			response[3] = hb(elv_motor_state.motor_position);
+//			response[4] = lb(elv_motor_state.motor_position);
+			response[9] = (uint8_t)(azm_motor_state.motor_enable | elv_motor_state.motor_enable);
+			response_len = 10;
 			break;
 		case MOVE_AZM_BY:
 			if (azm_motor_state.motor_count) {

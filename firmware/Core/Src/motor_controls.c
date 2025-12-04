@@ -119,6 +119,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			} else {
 				azm_motor_state.motor_position -= 6400 / azm_motor_state.motor_pulse_rev;
 			}
+			if (azm_motor_state.motor_position > azm_motor_state.tooth_ratio * 6400 / 1000) {
+				azm_motor_state.motor_position -= azm_motor_state.tooth_ratio * 6400 / 1000;
+			}
+			if (azm_motor_state.motor_position < -1 * azm_motor_state.tooth_ratio * 6400 / 1000) {
+				azm_motor_state.motor_position += azm_motor_state.tooth_ratio * 6400 / 1000;
+			}
 
 			azm_motor_state.motor_count--;
 			// stop if it has reached the number of iterations.
@@ -138,6 +144,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				elv_motor_state.motor_position += 6400 / elv_motor_state.motor_pulse_rev;
 			} else {
 				elv_motor_state.motor_position -= 6400 / elv_motor_state.motor_pulse_rev;
+			}
+			if (elv_motor_state.motor_position > elv_motor_state.tooth_ratio * 6400 / 1000) {
+				elv_motor_state.motor_position -= elv_motor_state.tooth_ratio * 6400 / 1000;
+			}
+			if (elv_motor_state.motor_position < -1 * elv_motor_state.tooth_ratio * 6400 / 1000) {
+				elv_motor_state.motor_position += elv_motor_state.tooth_ratio * 6400 / 1000;
 			}
 
 			elv_motor_state.motor_count--;

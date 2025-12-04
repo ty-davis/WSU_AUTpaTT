@@ -95,9 +95,9 @@ class MyMainWindow(QtWidgets.QMainWindow):
             return
         result = await self.motor_conn.send_command_async("GET_STATE")
         azm = int(result['azm']) / 8
-        azm_degrees = azm * 10000 / self.params_man.params['azm_pulse_rev'] * 360 / self.params_man.params['azm_tooth_ratio'] / 10
+        azm_degrees = azm * 10000 / self.params_man.params['azm_pulse_rev'] * 360 / self.params_man.params['azm_tooth_ratio']
         elv = int(result['elv']) / 8
-        elv_degrees = elv * 10000 / self.params_man.params['elv_pulse_rev'] * 360 / self.params_man.params['elv_tooth_ratio'] / 10
+        elv_degrees = elv * 10000 / self.params_man.params['elv_pulse_rev'] * 360 / self.params_man.params['elv_tooth_ratio']
         locked = bool(result['locked'])
         self.azimuthLocation.display(round(azm_degrees))
         self.elevationLocation.display(round(elv_degrees))

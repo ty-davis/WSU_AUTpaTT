@@ -6,8 +6,8 @@ STATUS_CODES = {
         "alias": 'gs',
         "params": [],
         "scalar": None,
-        "response_params": ['int16_t', 'int16_t', 'uint8_t'],
-        "response_scalar": [10, 10],
+        "response_params": ['int32_t', 'int32_t', 'uint8_t'],
+        "response_scalar": [10, 10, 1],
         "response_names": ['azm', 'elv', 'locked']
     },
     "MOVE_AZM_BY":  {
