@@ -198,6 +198,8 @@ class MyMainWindow(QtWidgets.QMainWindow):
             self.plot_data(results)
         except asyncio.CancelledError:
             self.log("Scan cancelled by user")
+        except RuntimeError as e:
+            self.log("Error:", e)
         finally:
             self.cancel_button.hide()
             self.start_button.show()

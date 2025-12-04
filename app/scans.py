@@ -126,7 +126,7 @@ class ThreeDThetaCut(AbstractScan):
     def __init__(self):
         super().__init__()
         self.name = "3D θ-cut Fast Scan"
-        self.instructions = """Transmit Antenna polarity should be vertical. Set AUT to φ = 90 and θ = 0"""
+        self.instructions = """"""
 
     async def run_procedure(self):
         if not self.motor_conn.serial_connection:
@@ -146,31 +146,69 @@ class ThreeDThetaCut(AbstractScan):
             self.params['rx_freq_offset'])
 
         # calculate some angles
-        phi_angles = []
+        home_pos = 0
+        phi_start_pos = self.params['mast_start_angle']
+        phi_end_pos = self.params['mast_end_angle']
+        phi_steps = self.params['mast_steps']
+        phi_angles = np.linspace(phi_start_pos, phi_end_pos, phi_steps)
+
+        theta_start_pos = self.params['arm_start_angle']
+        theta_end_pos = self.params['arm_end_angle']
+        theta_steps = self.params['arm_steps']
+
 
         self.log(f"STARTING SCAN: {self.name}")
+        await asyncio.sleep(1)
+        self.log(f"Moving to start position...")
+        await self.motor_conn.send_command_async("MOVE_AZM_TO", phi_start_pos)
+        await self.motor_conn.send_command_async("MOVE_ELV_TO", theta_start_pos)
+        await self.motor_conn.wait_async(20)
+
+        # start the tx antenna and wait for startup
         radio_tx_graph.start()
         await asyncio.sleep(3)
 
         self.log("Collecting data...")
-        for i, elv in enumerate(phi_angles):
-            ...
+        await asyncio.sleep(0.2)
+        data = np.array([])
+        for i, phi in enumerate(phi_angles):
+            self.progress_bar.setValue(round(i / phi_steps * 100))
+            self.log(f"Collecting scan at φ: {phi}")
+            radio_rx_graph.start()
+            await self.motor_conn.send_command_async("MOVE_ELV_BY", 360)
+            await self.motor_conn.wait_async(20)
+            radio_rx_graph.stop()
+            self.log(f"FINISHED COLLECTING AT φ: {phi}")
+            antenna_data = radio_rx_graph.vector_sink_0.data()
 
+            n = len(antenna_data)
+            self.log(f"Read {n} data points")
 
+            num_samples = theta_steps
+            bin_size = n //num_samples
+            avg = np.zeros(num_samples)
+            for i in range(num_samples):
+                avg[i] = np.sqrt(
+                    np.square(antenna_data[i*bin_size:(i+1)*bin_size])
+                      .sum()/bin_size
+                )
+            theta_angles = np.linspace(theta_start_pos, theta_end_pos, theta_steps)
+            background_rssi = np.zeros(len(avg))
+            phi_row = np.array([phi for _ in range(theta_steps)])
+            cut_data = np.column_stack((phi_row, theta_angles, background_rssi, avg))
+            if not data.size:
+                data = cut_data.copy()
+            else:
+                data = np.concatenate((data, cut_data), axis=0)
 
+            if hasattr(radio_rx_graph, 'vector_sink_0'):
+                radio_rx_graph.vector_sink_0.reset()
 
-
-
-        results = []
-        for i in range(100):
-            self.progress_bar.setValue(i)
-            await self._check_cancelled()
-            await asyncio.sleep(0.1)
-            results.append((float(i), 0., 0., 0.))
-
+        radio_tx_graph.stop()
         self.progress_bar.setValue(100)
-        self.log("SCAN COMPLETE")
-        return results
+        self.log("Scan complete")
+
+        return data
 
 class ThetaScan(AbstractScan):
     def __init__(self):
@@ -232,11 +270,67 @@ class PhiScan(AbstractScan):
     def __init__(self):
         super().__init__()
         self.name = "2D Scan φ"
-        self.instructions = """Here are the instructions"""
+        self.instructions = """"""
 
     async def run_procedure(self):
-        return [(0., 0., 0., 0.)]
+        if not self.motor_conn.serial_connection:
+            try:
+                self.motor_conn.connect()
+            except SerialException as e:
+                self.log(f"Error connecting to motor, scan failed: {e}")
+                return
 
+        # initialize the radios
+        radio_tx_graph = TxRadio.RadioFlowGraph(
+            self.params['tx_radio_id'],
+            self.params['frequency'],
+            self.params['tx_freq_offset'])
+        radio_rx_graph = RxRadio.RadioFlowGraph(
+            self.params['rx_radio_id'],
+            self.params['frequency'],
+            self.params['rx_freq_offset'])
+
+        self.log(f"Moving to start position...")
+        start_pos = self.params['mast_start_angle']
+        end_pos = self.params['mast_end_angle']
+        home_pos = 0
+        await self.motor_conn.send_command_async('MOVE_AZM_TO', start_pos)
+        await self.motor_conn.wait_async(20)
+
+        # start tx antenna and allow startup time
+        radio_tx_graph.start()
+        await asyncio.sleep(3)
+
+        self.log("Collecting data...")
+        radio_rx_graph.start()
+        await self.motor_conn.send_command_async('MOVE_AZM_TO', end_pos)
+        await self.motor_conn.wait_async(20)
+        radio_rx_graph.stop()
+        self.log("Collection complete")
+        self.progress_bar.setValue(100)
+        radio_tx_graph.stop()
+        await asyncio.sleep(1)
+        await self.motor_conn.send_command_async('MOVE_AZM_TO', home_pos)
+
+
+        antenna_data = radio_rx_graph.vector_sink_0.data()
+        n = len(antenna_data)
+        self.log(f"Read {n} data points")
+        antenna_pow = np.square(antenna_data)
+        num_samples = self.params["mast_steps"]
+        bin_size = n //num_samples
+        avg = np.zeros(num_samples)
+        for i in range(num_samples):
+            avg[i] = np.sqrt(
+                np.square(antenna_data[i*bin_size:(i+1)*bin_size])
+                  .sum()/bin_size
+            )
+        phi_angles = np.linspace(start_pos, end_pos, num_samples)
+        theta_angles = np.zeros(len(avg)) + 90
+        background_rssi = np.zeros(len(avg))
+        data = np.column_stack((phi_angles, theta_angles, background_rssi, avg))
+
+        return data
 
 
 all_scans = [
